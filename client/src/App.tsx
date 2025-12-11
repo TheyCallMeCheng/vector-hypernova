@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { joinRoom, room } from './services/colyseus';
+import { useRef, useEffect, useState } from 'react';
+import { joinRoom } from './services/colyseus';
+import * as Colyseus from "colyseus.js";
 import { Lobby } from './components/Lobby';
 import { GameTable } from './components/GameTable';
 import { Hand } from './components/Hand';
@@ -31,6 +32,8 @@ function App() {
     const [selectedCardName, setSelectedCardName] = useState<string>('');
     const [needsGuess, setNeedsGuess] = useState(false);
 
+    const roomRef = useRef<Colyseus.Room | null>(null);
+
     useEffect(() => {
         let isActive = true;
 
@@ -45,6 +48,8 @@ function App() {
                     await roomInstance.leave();
                     return;
                 }
+
+                roomRef.current = roomInstance;
 
                 setMySessionId(roomInstance.sessionId);
                 setConnected(true);
@@ -82,17 +87,17 @@ function App() {
 
         return () => {
             isActive = false;
-            if (room) {
-                room.leave();
-                // We shouldn't setConnected(false) here if we want to allow re-mounting logic, 
-                // but for Strict Mode double-mount, we want the first one to DIE.
-                setConnected(false);
+            // Leave the room if it exists in the ref
+            if (roomRef.current) {
+                roomRef.current.leave();
+                roomRef.current = null;
             }
+            setConnected(false);
         };
     }, []);
 
     const handleStartGame = () => {
-        room?.send("start_game");
+        roomRef.current?.send("start_game");
     };
 
     const handlePlayCardClick = (index: number) => {
@@ -111,12 +116,12 @@ function App() {
             setShowTargetModal(true);
         } else {
             // Play immediately (Handmaid, Countess, Princess)
-            room?.send("play_card", { cardIndex: index });
+            roomRef.current?.send("play_card", { cardIndex: index });
         }
     };
 
     const handleTargetSelect = (targetId: string, guessValue?: number) => {
-        room?.send("play_card", {
+        roomRef.current?.send("play_card", {
             cardIndex: selectedCardIndex,
             targetId,
             guessValue
