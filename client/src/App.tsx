@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { joinRoom, room } from './services/colyseus';
 import { Lobby } from './components/Lobby';
 import { GameTable } from './components/GameTable';
@@ -12,6 +12,7 @@ let discordSdk: DiscordSDK | null = null;
 try {
     if (window.location.search.includes("frame_id")) {
         discordSdk = new DiscordSDK(import.meta.env.VITE_DISCORD_CLIENT_ID || "mock_id");
+        console.log("Discord SDK Initialized", discordSdk);
     }
 } catch (e) {
     console.warn("Discord SDK not initialized (running locally?)", e);

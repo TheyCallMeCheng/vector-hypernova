@@ -14,6 +14,7 @@
     "@tailwindcss/vite": "^4.1.17",
     "autoprefixer": "^10.4.22",
     "colyseus.js": "^0.16.22",
+    "framer-motion": "^12.23.26",
     "postcss": "^8.5.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
