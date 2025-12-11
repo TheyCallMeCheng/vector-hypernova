@@ -9,17 +9,19 @@ interface Player {
 
 interface TargetModalProps {
     players: Player[];
+    currentPlayerId: string; // New prop to identify self
     cardName: string;
     onSelect: (targetId: string, guessValue?: number) => void;
     onCancel: () => void;
     needsGuess: boolean; // For Guard
 }
 
-export const TargetModal: React.FC<TargetModalProps> = ({ players, cardName, onSelect, onCancel, needsGuess }) => {
+export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayerId, cardName, onSelect, onCancel, needsGuess }) => {
     const [selectedTarget, setSelectedTarget] = useState<string>('');
     const [guessValue, setGuessValue] = useState<number>(2); // Default to Priest (2)
 
-    const validTargets = players.filter(p => !p.isEliminated && !p.isProtected);
+    // Filter: Not eliminated, Not protected, Not myself
+    const validTargets = players.filter(p => !p.isEliminated && !p.isProtected && p.id !== currentPlayerId);
 
     const handleSubmit = () => {
         if (selectedTarget) {

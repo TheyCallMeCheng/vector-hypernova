@@ -171,6 +171,7 @@ function App() {
             {showTargetModal && (
                 <TargetModal
                     players={players}
+                    currentPlayerId={mySessionId}
                     cardName={selectedCardName}
                     onSelect={handleTargetSelect}
                     onCancel={() => setShowTargetModal(false)}
