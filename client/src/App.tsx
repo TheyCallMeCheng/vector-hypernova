@@ -125,7 +125,7 @@ function App() {
     };
 
     if (!connected) {
-        return <div className="flex items-center justify-center h-screen text-white">Connecting...</div>;
+        return <div className="flex items-center justify-center h-screen text-white bg-gray-900">Connecting...</div>;
     }
 
     // Determine view
