@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Card } from './Card'; // Import Card component
 
 interface Player {
     id: string;
@@ -10,12 +11,22 @@ interface Player {
 
 interface TargetModalProps {
     players: Player[];
-    currentPlayerId: string; // New prop to identify self
+    currentPlayerId: string;
     cardName: string;
     onSelect: (targetId: string, guessValue?: number) => void;
     onCancel: () => void;
-    needsGuess: boolean; // For Guard
+    needsGuess: boolean;
 }
+
+const GUESSABLE_CARDS = [
+    { value: 2, name: 'Priest', desc: 'Look at a hand' },
+    { value: 3, name: 'Baron', desc: 'Compare hands' },
+    { value: 4, name: 'Handmaid', desc: 'Protection' },
+    { value: 5, name: 'Prince', desc: 'Discard hand' },
+    { value: 6, name: 'King', desc: 'Trade hands' },
+    { value: 7, name: 'Countess', desc: 'Discard if Royal' },
+    { value: 8, name: 'Princess', desc: 'Lose if discarded' },
+];
 
 export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayerId, cardName, onSelect, onCancel, needsGuess }) => {
     // Filter: Not eliminated, Not myself
@@ -32,14 +43,14 @@ export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayer
     };
 
     return (
-        <div className="fixed inset-0 backdrop-blur-md bg-black/40 flex items-center justify-center z-50">
-            <div className="bg-white text-black p-6 rounded-lg w-96 shadow-2xl border border-white/20">
-                <h3 className="text-xl font-bold mb-4">Play {cardName}</h3>
+        <div className="fixed inset-0 backdrop-blur-md bg-black/40 flex items-center justify-center z-50 overflow-y-auto py-10">
+            <div className={`bg-white text-black p-6 rounded-lg shadow-2xl border border-white/20 transition-all ${needsGuess ? 'max-w-4xl w-full' : 'w-96'}`}>
+                <h3 className="text-2xl font-bold mb-6 text-center">Play {cardName}</h3>
 
-                <div className="mb-4">
+                <div className="mb-6 max-w-sm mx-auto">
                     <label className="block text-sm font-bold mb-2">Select Target:</label>
                     <select
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded text-lg"
                         value={selectedTarget}
                         onChange={(e) => setSelectedTarget(e.target.value)}
                     >
@@ -52,32 +63,35 @@ export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayer
                 </div>
 
                 {needsGuess && (
-                    <div className="mb-4">
-                        <label className="block text-sm font-bold mb-2">Guess Card:</label>
-                        <select
-                            className="w-full border p-2 rounded"
-                            value={guessValue}
-                            onChange={(e) => setGuessValue(Number(e.target.value))}
-                        >
-                            <option value={2}>Priest (2)</option>
-                            <option value={3}>Baron (3)</option>
-                            <option value={4}>Handmaid (4)</option>
-                            <option value={5}>Prince (5)</option>
-                            <option value={6}>King (6)</option>
-                            <option value={7}>Countess (7)</option>
-                            <option value={8}>Princess (8)</option>
-                        </select>
+                    <div className="mb-8">
+                        <label className="block text-sm font-bold mb-4 text-center">Guess their card:</label>
+                        <div className="flex flex-wrap justify-center gap-4">
+                            {GUESSABLE_CARDS.map((card) => (
+                                <div key={card.value} className="relative">
+                                    <div className="transform scale-75 origin-top">
+                                        <Card
+                                            value={card.value}
+                                            name={card.name}
+                                            description={card.desc}
+                                            active={guessValue === card.value}
+                                            onClick={() => setGuessValue(card.value)}
+                                        />
+                                    </div>
+                                    {/* Overlay for better click area or just rely on Card */}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 
-                <div className="flex justify-end space-x-2">
-                    <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">Cancel</button>
+                <div className="flex justify-center space-x-4 mt-4">
+                    <button onClick={onCancel} className="px-6 py-3 text-gray-600 hover:text-gray-800 font-medium">Cancel</button>
                     <button
                         onClick={handleSubmit}
                         disabled={!selectedTarget}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+                        className="px-8 py-3 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 disabled:bg-gray-400 shadow-lg transform transition hover:scale-105"
                     >
-                        Confirm
+                        Confirm Move
                     </button>
                 </div>
             </div>
