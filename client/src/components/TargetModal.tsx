@@ -74,7 +74,7 @@ export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayer
                                         description={card.desc}
                                         active={guessValue === card.value}
                                         onClick={() => setGuessValue(card.value)}
-                                        className="w-24 h-36 border text-xs p-1" // Override for mini card
+                                        variant="mini"
                                     />
                                 </div>
                             ))}

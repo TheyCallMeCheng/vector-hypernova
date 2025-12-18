@@ -24,6 +24,7 @@ export interface CardProps {
     isSelected?: boolean;
     active?: boolean; // For "My Turn" highlighting (glow)
     className?: string; // Allow overriding dimensions/margin
+    variant?: 'standard' | 'mini';
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -33,10 +34,20 @@ export const Card: React.FC<CardProps> = ({
     onClick,
     disabled = false,
     active = false,
-    className
+    className,
+    variant = 'standard'
 }) => {
     const imageSrc = CARD_IMAGES[name];
-    const sizeClasses = className || "w-48 h-72";
+    const sizeClasses = className || (variant === 'mini' ? "w-24 h-36" : "w-48 h-72");
+
+    // Dynamic styles based on variant
+    const valueSize = variant === 'mini' ? 'text-lg' : 'text-2xl';
+    const indicatorSize = variant === 'mini' ? 'w-3 h-3' : 'w-5 h-5';
+    const nameSize = variant === 'mini' ? 'text-sm' : 'text-xl';
+    const nameMargin = variant === 'mini' ? 'mt-4' : 'mt-10';
+    const descSize = variant === 'mini' ? 'text-[10px] leading-tight' : 'text-xs leading-relaxed';
+    const descMargin = variant === 'mini' ? 'mt-1' : 'mt-3';
+    const padding = variant === 'mini' ? 'p-2' : 'p-4';
 
     return (
         <motion.div
@@ -44,14 +55,14 @@ export const Card: React.FC<CardProps> = ({
             initial={{ scale: 0.8, opacity: 0, y: 50 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.8, opacity: 0, y: -50 }}
-            whileHover={!disabled ? { scale: 1.4, rotate: 2, zIndex: 10 } : {}}
+            whileHover={!disabled ? { scale: 1.4, zIndex: 10 } : {}}
             whileTap={!disabled ? { scale: 0.95 } : {}}
             onClick={!disabled ? onClick : undefined}
             className={`
-                ${sizeClasses} rounded-lg cursor-pointer shadow-xl relative select-none overflow-hidden
+                ${sizeClasses} rounded-lg cursor-pointer shadow-xl relative select-none overflow-hidden origin-bottom
                 ${disabled ? 'grayscale cursor-not-allowed border-2 border-red-500 opacity-80' : 'border-2 border-gray-400 opacity-100'}
                 ${active ? 'ring-4 ring-yellow-400 shadow-yellow-400/50' : ''}
-                ${!imageSrc ? 'bg-white text-black p-4' : 'bg-black'} 
+                ${!imageSrc ? `bg-white text-black ${padding}` : 'bg-black'} 
             `}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         >
@@ -64,11 +75,11 @@ export const Card: React.FC<CardProps> = ({
             ) : (
                 <>
                     <div className="flex justify-between items-start pointer-events-none">
-                        <span className="font-bold text-2xl">{value}</span>
-                        <div className="w-5 h-5 bg-red-500 rounded-full"></div>
+                        <span className={`font-bold ${valueSize}`}>{value}</span>
+                        <div className={`${indicatorSize} bg-red-500 rounded-full`}></div>
                     </div>
-                    <div className="mt-10 text-center font-bold text-xl pointer-events-none">{name}</div>
-                    <p className="text-xs mt-3 text-gray-600 text-center pointer-events-none leading-relaxed">{description}</p>
+                    <div className={`${nameMargin} text-center font-bold ${nameSize} pointer-events-none`}>{name}</div>
+                    <p className={`${descSize} ${descMargin} text-gray-600 text-center pointer-events-none`}>{description}</p>
                 </>
             )}
         </motion.div>

@@ -61,7 +61,7 @@ export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, 
             </div>
 
             {/* Center Area: Deck & Discard */}
-            <div className="flex-1 flex items-center justify-center space-x-12">
+            <div className="flex-1 flex items-center justify-center space-x-12 pb-40">
                 {/* Deck */}
                 <div className="w-24 h-36 bg-blue-900 border-2 border-white rounded-lg flex items-center justify-center shadow-lg">
                     <span className="text-2xl font-bold">{deckCount}</span>
