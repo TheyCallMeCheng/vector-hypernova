@@ -55,25 +55,18 @@ async function getDiscordAuth(): Promise<{ userName: string; discordId: string; 
     }
     
     try {
-        console.log("Waiting for SDK ready...");
         await discordSdk.ready();
-        console.log("Discord SDK ready!");
         
-        console.log("Calling authorize...");
         const authResult = await discordSdk.commands.authorize({
             client_id: import.meta.env.VITE_DISCORD_CLIENT_ID,
             response_type: 'code',
             scope: ['identify'],
         });
-        console.log("Authorization result:", authResult);
         const { code } = authResult;
         
         // Use the current origin as the redirect_uri
-        // For Discord Activities, this is usually https://[DISCORD_ID].discordsays.com
         const pUri = window.location.origin;
-        console.log("Using redirect_uri:", pUri);
 
-        console.log("Exchanging code for token...");
         const tokenResponse = await fetch('/api/discord/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -82,21 +75,17 @@ async function getDiscordAuth(): Promise<{ userName: string; discordId: string; 
                 redirect_uri: pUri
             }),
         });
-        console.log("Token response status:", tokenResponse.status);
         
         if (!tokenResponse.ok) {
-            const errorText = await tokenResponse.text();
-            console.error("Token exchange failed:", tokenResponse.status, errorText);
+            console.error("Token exchange failed:", tokenResponse.status);
             return { userName, discordId, avatarUrl };
         }
         
         const tokenData = await tokenResponse.json();
-        console.log("Token received, authenticating...");
         
         const auth = await discordSdk.commands.authenticate({
             access_token: tokenData.access_token,
         });
-        console.log("Authenticated!", auth);
         
         if (auth.user) {
             const user = auth.user as DiscordUser;
@@ -109,17 +98,10 @@ async function getDiscordAuth(): Promise<{ userName: string; discordId: string; 
                 const defaultAvatarIndex = Number((BigInt(user.id) >> BigInt(22)) % BigInt(6));
                 avatarUrl = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarIndex}.png`;
             }
-            console.log("Got Discord user:", userName, discordId, avatarUrl);
+            console.log("Authenticated as Discord user:", userName);
         }
-    } catch (e: any) {
-        console.error("=== DISCORD AUTH ERROR ===");
-        console.error("Error details:", e);
-        if (typeof e === 'object') {
-            console.error("Error keys:", Object.keys(e));
-            console.error("Error stringified:", JSON.stringify(e));
-            if (e.message) console.error("Error message:", e.message);
-            if (e.code) console.error("Error code:", e.code);
-        }
+    } catch (e) {
+        console.error("Discord auth failed:", e);
     }
     
     return { userName, discordId, avatarUrl };

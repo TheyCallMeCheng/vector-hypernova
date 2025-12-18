@@ -21,10 +21,6 @@ app.post("/api/discord/token", async (req, res) => {
     // accept redirect_uri from the client
     const { code, redirect_uri } = req.body;
     
-    console.log("=== Discord Token Exchange ===");
-    console.log("Code received:", code ? "yes" : "no");
-    console.log("Redirect URI from client:", redirect_uri || "NONE");
-    
     if (!code) {
         return res.status(400).json({ error: "Missing authorization code" });
     }
@@ -33,14 +29,9 @@ app.post("/api/discord/token", async (req, res) => {
         const discordClientId = process.env.DISCORD_CLIENT_ID || process.env.VITE_DISCORD_CLIENT_ID || "";
         const discordClientSecret = process.env.DISCORD_CLIENT_SECRET || process.env.VITE_DISCORD_CLIENT_SECRET || "";
         
-        console.log("Client ID configured:", discordClientId ? "yes" : "NO - MISSING!");
-        console.log("Client Secret configured:", discordClientSecret ? "yes" : "NO - MISSING!");
-        
         // Use the redirect_uri provided by the client, fallback to origin header if missing
         const origin = req.headers.origin || req.headers.referer || "";
         const finalRedirectUri = (redirect_uri || origin).replace(/\/$/, ""); 
-        
-        console.log("Final Redirect URI being used:", finalRedirectUri);
         
         const params = new URLSearchParams({
             client_id: discordClientId,
@@ -50,8 +41,6 @@ app.post("/api/discord/token", async (req, res) => {
             redirect_uri: finalRedirectUri,
         });
 
-        console.log("Sending to Discord API:", params.toString());
-        
         const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
