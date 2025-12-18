@@ -4,9 +4,10 @@ interface LobbyProps {
     players: any[];
     onStart: () => void;
     isHost: boolean;
+    onExit: () => void;
 }
 
-export const Lobby: React.FC<LobbyProps> = ({ players, onStart, isHost }) => {
+export const Lobby: React.FC<LobbyProps> = ({ players, onStart, isHost, onExit }) => {
     return (
         <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
             <h1 className="text-4xl font-bold mb-8">Love Letter Lobby</h1>
@@ -42,6 +43,13 @@ export const Lobby: React.FC<LobbyProps> = ({ players, onStart, isHost }) => {
                     <p className="text-center text-gray-400">Waiting for host to start...</p>
                 )}
             </div>
+            
+            <button 
+                onClick={onExit}
+                className="mt-8 text-gray-400 hover:text-white underline"
+            >
+                Exit to Main Menu
+            </button>
         </div>
     );
 };

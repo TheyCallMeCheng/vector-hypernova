@@ -122,6 +122,7 @@ async function getDiscordAuth(): Promise<{ userName: string; discordId: string; 
 
 function App() {
     const [connected, setConnected] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(false);
     const [players, setPlayers] = useState<any[]>([]);
     const [gameState, setGameState] = useState<any>(null);
     const [mySessionId, setMySessionId] = useState<string>('');
@@ -135,13 +136,12 @@ function App() {
 
     const roomRef = useRef<Colyseus.Room | null>(null);
 
-    useEffect(() => {
-        let isActive = true;
-        let didJoin = false; // Track if this effect already joined
-
-        const init = async () => {
-            console.log("=== Starting Init ===");
-            
+    const connectToGame = async () => {
+        if (isConnecting || connected) return;
+        setIsConnecting(true);
+        console.log("=== Starting Connection ===");
+        
+        try {
             // Get Discord auth (or fallback) - cached so only runs once
             if (!authPromise) {
                 authPromise = getDiscordAuth();
@@ -152,73 +152,87 @@ function App() {
             
             console.log("Auth complete. Joining room with:", userName, discordId ? "(Discord)" : "(fallback)", "Instance:", instanceId);
             
-            // Don't join if component unmounted or already joined
-            if (!isActive || didJoin) {
-                console.log("Skipping room join - inactive or already joined");
-                return;
-            }
-            
-            didJoin = true;
+            const roomInstance = await joinRoom({
+                name: userName,
+                discordId,
+                avatarUrl,
+                discordInstanceId: instanceId,
+            });
 
-            try {
-                const roomInstance = await joinRoom({
-                    name: userName,
-                    discordId,
-                    avatarUrl,
-                    discordInstanceId: instanceId,
-                });
+            roomRef.current = roomInstance;
 
-                if (!isActive) {
-                    await roomInstance.leave();
-                    return;
-                }
+            setMySessionId(roomInstance.sessionId);
+            setConnected(true);
 
-                roomRef.current = roomInstance;
+            roomInstance.onStateChange((state: any) => {
+                setGameState({ ...state });
+                const playerList: any[] = [];
+                state.players.forEach((p: any) => playerList.push(p));
+                setPlayers(playerList);
+            });
 
-                setMySessionId(roomInstance.sessionId);
-                setConnected(true);
+            roomInstance.onMessage("message", (msg: string) => {
+                setLogs(prev => [...prev, msg]);
+            });
 
-                roomInstance.onStateChange((state: any) => {
-                    if (!isActive) return;
-                    setGameState({ ...state });
-                    const playerList: any[] = [];
-                    state.players.forEach((p: any) => playerList.push(p));
-                    setPlayers(playerList);
-                });
+            roomInstance.onMessage("private_message", (msg: string) => {
+                setLogs(prev => [...prev, `[PRIVATE] ${msg}`]);
+            });
 
-                roomInstance.onMessage("message", (msg: string) => {
-                    if (!isActive) return;
-                    setLogs(prev => [...prev, msg]);
-                });
+            roomInstance.onMessage("error", (msg: string) => {
+                alert(msg);
+            });
 
-                roomInstance.onMessage("private_message", (msg: string) => {
-                    if (!isActive) return;
-                    setLogs(prev => [...prev, `[PRIVATE] ${msg}`]);
-                });
-
-                roomInstance.onMessage("error", (msg: string) => {
-                    if (!isActive) return;
-                    alert(msg);
-                });
-
-            } catch (e) {
-                if (!isActive) return;
-                console.error("Failed to connect", e);
-            }
-        };
-
-        init();
-
-        return () => {
-            isActive = false;
-            // Leave the room if it exists in the ref
-            if (roomRef.current) {
-                roomRef.current.leave();
+            // Handle leave
+            roomInstance.onLeave((code) => {
+                console.log("Left room", code);
+                setConnected(false);
                 roomRef.current = null;
-            }
-            setConnected(false);
-        };
-    }, []);
+            });
+
+        } catch (e) {
+            console.error("Failed to connect", e);
+            alert("Failed to connect: " + e);
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+
+    // Initial connection attempt (optional, or we can make it manual only)
+    // For now, let's make it manual to show the menu, OR auto-connect if it's the first load
+    // But user asked for "Main Menu" to be accessible.
+    // Let's keep it manual start for clarity, or auto-start first time?
+    // "Exit game button that will take us to the main menu" suggests main menu is a place.
+    // Let's trigger auto-connect on mount for convenience, but allow exit.
+    // Actually, if we want Main Menu, we should probably start there. 
+    // BUT the user said "Exit game button ... to main menu", maybe they want immediate join first?
+    // Let's stick to: Start at Main Menu.
+    
+    // useEffect(() => {
+    //     connectToGame();
+    //     return () => {
+    //         if (roomRef.current) {
+    //             roomRef.current.leave();
+    //         }
+    //     };
+    // }, []);
+    
+    const handleExitGame = () => {
+        if (roomRef.current) {
+            // We want to be able to rejoin, so we don't want to "leave()" gracefully which might trigger elimination if we did that (though server logic handles it).
+            // Actually, server `onLeave` handles both consented and unconsented.
+            // If we want to REJOIN, we must simulate a DISCONNECTION (unconsented) or ensure server treats consented leave as rejoinable?
+            // Server code: `if (consented) { player.isEliminated = true; ... }`
+            // So we MUST NOT consent if we want to rejoin.
+            // We can force close the connection.
+            roomRef.current.connection.close(); 
+            roomRef.current = null;
+        }
+        setConnected(false);
+        setPlayers([]);
+        setGameState(null);
+        setLogs([]);
+    };
 
     const handleStartGame = () => {
         roomRef.current?.send("start_game");
@@ -254,14 +268,43 @@ function App() {
     };
 
     if (!connected) {
-        return <div className="flex items-center justify-center h-screen text-white bg-gray-900">Connecting...</div>;
+        return (
+            <div className="flex flex-col items-center justify-center h-screen text-white bg-gray-900">
+                <h1 className="text-5xl font-bold mb-8 text-green-500">Love Letter</h1>
+                <div className="bg-gray-800 p-8 rounded-lg shadow-xl flex flex-col items-center space-y-6">
+                    <p className="text-gray-300 text-center max-w-md">
+                        Welcome to Love Letter! Join the game to play with others in this channel.
+                    </p>
+                    <button 
+                        onClick={connectToGame}
+                        disabled={isConnecting}
+                        className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xl transition-all flex items-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isConnecting ? (
+                            <>
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Connecting...
+                            </>
+                        ) : "Play / Rejoin Game"}
+                    </button>
+                    {!isConnecting && (
+                         <div className="text-xs text-gray-500 mt-4">
+                             Instance: {window.location.search.includes('instance_id') ? 'Discord Activity' : 'Global Browser'}
+                         </div>
+                    )}
+                </div>
+            </div>
+        );
     }
 
     // Determine view
     const isGameActive = gameState?.gamePhase === 'playing' || gameState?.gamePhase === 'round_end';
 
     if (!isGameActive) {
-        return <Lobby players={players} onStart={handleStartGame} isHost={gameState?.hostId === mySessionId} />;
+        return <Lobby players={players} onStart={handleStartGame} isHost={gameState?.hostId === mySessionId} onExit={handleExitGame} />;
     }
 
     const myPlayer = players.find(p => p.id === mySessionId);
@@ -275,6 +318,7 @@ function App() {
                 deckCount={gameState.deck.length}
                 discardPile={gameState.discardPile}
                 logs={logs}
+                onExit={handleExitGame}
             />
 
             {myPlayer && !myPlayer.isEliminated && (

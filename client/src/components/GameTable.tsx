@@ -17,14 +17,22 @@ interface GameTableProps {
     deckCount: number;
     discardPile: any[];
     logs: string[];
+    onExit: () => void;
 }
 
-export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, activePlayerId, deckCount, discardPile, logs }) => {
+export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, activePlayerId, deckCount, discardPile, logs, onExit }) => {
     // Filter out myself to show others around the table
     const otherPlayers = players.filter(p => p.id !== currentPlayerId);
 
     return (
         <div className="flex-1 flex flex-col relative">
+            {/* Exit Button */}
+            <button 
+                onClick={onExit}
+                className="absolute top-4 left-4 z-10 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow font-bold text-sm"
+            >
+                Exit Game
+            </button>
             {/* Opponents Area */}
             <div className="flex justify-center space-x-8 pt-8">
                 {otherPlayers.map(p => (
