@@ -20,7 +20,8 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
 
         this.onMessage("start_game", (client, message) => {
             if (this.state.players.get(client.sessionId) && this.state.players.size >= 2) {
-                this.startGame();
+                // message contains options like { winningScore: 5 }
+                this.startGame(message);
             }
         });
 
@@ -144,17 +145,38 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
         console.log("room disposed");
     }
 
-    startGame() {
+    startGame(options?: any) {
+        // Full Game Reset
+        if (options && options.winningScore) {
+            this.state.winningScore = options.winningScore;
+        } else {
+            this.state.winningScore = 3; // Default
+        }
+
+        // Reset scores
+        this.state.players.forEach(player => {
+            player.score = 0;
+        });
+
+        this.startRound();
+    }
+
+    startRound() {
         this.state.gamePhase = "playing";
         this.state.deck.clear();
         this.state.discardPile.clear();
+        this.state.winner = ""; // Reset round winner tracking
         
-        // Reset players
-        this.state.players.forEach(player => {
+        // Reset players (keep scores)
+        // Reset players (keep scores)
+        console.log("--- STARTING ROUND: RESETTING PLAYERS ---");
+        for (const [sessionId, player] of this.state.players) {
             player.hand.clear();
+            const wasEliminated = player.isEliminated;
             player.isEliminated = false;
             player.isProtected = false;
-        });
+            console.log(`Resetting player ${player.name} (${sessionId}): isEliminated was ${wasEliminated} -> now false`);
+        }
 
         // Build Deck
         const deck: Card[] = [];
@@ -201,11 +223,22 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
     }
 
     handlePlayCard(client: Client, message: any) {
-        if (this.state.gamePhase !== "playing") return;
-        if (this.state.currentTurn !== client.sessionId) return;
+        if (this.state.gamePhase !== "playing") {
+            console.log(`[handlePlayCard] REJECTED: Game phase is ${this.state.gamePhase}`);
+            return;
+        }
+        if (this.state.currentTurn !== client.sessionId) {
+            console.log(`[handlePlayCard] REJECTED: Not ${client.sessionId}'s turn (Current: ${this.state.currentTurn})`);
+            return;
+        }
 
         const player = this.state.players.get(client.sessionId);
-        if (!player || player.isEliminated) return;
+        if (!player) return;
+        
+        if (player.isEliminated) {
+            console.log(`[handlePlayCard] REJECTED: Player ${player.name} is ELIMINATED.`);
+            return;
+        }
 
         const cardIndex = message.cardIndex;
         if (cardIndex === undefined || cardIndex < 0 || cardIndex >= player.hand.length) return;
@@ -380,9 +413,8 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
     checkWinCondition() {
         const activePlayers = Array.from(this.state.players.values()).filter(p => !p.isEliminated);
         if (activePlayers.length === 1) {
-            this.state.winner = activePlayers[0].id;
-            this.state.gamePhase = "round_end";
-            this.broadcast("message", `${activePlayers[0].name} wins the round!`);
+            // Determine round winner
+            this.handleRoundWinner(activePlayers[0]);
             return true;
         }
         if (this.state.deck.length === 0) {
@@ -408,8 +440,40 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
         });
 
         if (winner) {
-            this.state.winner = winner.id;
-            this.broadcast("message", `Round over! ${winner.name} wins with ${winner.hand.at(0).name}.`);
+            this.handleRoundWinner(winner);
+        }
+    }
+
+    handleRoundWinner(winner: Player) {
+        this.state.gamePhase = "round_end";
+        this.state.winner = winner.id;
+        winner.score += 1; // Increment score
+
+        this.broadcast("message", `Round Winner: ${winner.name} (Score: ${winner.score}/${this.state.winningScore})`);
+
+        if (winner.score >= this.state.winningScore) {
+            // Game Winner
+            this.state.winner = winner.id; // Confirm winner in state
+            // Keep phase as round_end so client shows "Game Over" modal or similar?
+            // Actually, client might need to distinguish Round End vs Game End
+            // But let's use a broadcast for now to explicitly say GAME OVER
+            this.broadcast("message", `GAME OVER! ${winner.name} wins the match!`);
+            
+            // We can set a specific variable or just move directly to waiting after a delay?
+            // The prompt says "When a player arrives at the said score... we go back to the main menu."
+            
+            // Let's set a timeout to reset to lobby
+            this.clock.setTimeout(() => {
+                this.state.gamePhase = "waiting";
+                // Reset scores? Yes, new game needs new scores.
+            }, 8000); 
+
+        } else {
+            // Next Round
+            this.broadcast("message", "Next round starting in 3 seconds...");
+            this.clock.setTimeout(() => {
+                this.startRound();
+            }, 3000);
         }
     }
 }

@@ -247,28 +247,38 @@ function App() {
     //     };
     // }, []);
     
-    const handleExitGame = () => {
+    const handleStartGame = (winningScore?: number) => {
         if (roomRef.current) {
-            // We want to be able to rejoin, so we don't want to "leave()" gracefully which might trigger elimination if we did that (though server logic handles it).
-            // Actually, server `onLeave` handles both consented and unconsented.
-            // If we want to REJOIN, we must simulate a DISCONNECTION (unconsented) or ensure server treats consented leave as rejoinable?
-            // Server code: `if (consented) { player.isEliminated = true; ... }`
-            // So we MUST NOT consent if we want to rejoin.
-            // We can force close the connection.
-            roomRef.current.connection.close(); 
-            roomRef.current = null;
+            roomRef.current.send("start_game", { winningScore });
         }
-        setConnected(false);
-        setPlayers([]);
-        setGameState(null);
-        setPlayers([]);
-        setGameState(null);
-        setNotifications([]);
     };
 
-    const handleStartGame = () => {
-        roomRef.current?.send("start_game");
+    const handleExitGame = () => {
+        if (roomRef.current) {
+            // Close connection to simulate disconnect/exit
+            // In a real app we might leave() but here we want to allow rejoin if it was accidental?
+            // User asked for "Exit Game" button to take to Main Menu.
+            // If we just close(), the server keeps us alive.
+            // If we use .leave(true), it's consented.
+            // Let's assume exit means "I'm done".
+            // But user also asked for Rejoin.
+            // Let's use simple close() to allow rejoin, and set view to null.
+            // roomRef.current.connection.close(); // This simulates network drop
+            roomRef.current.leave(false); // intentional leave? No, we want rejoin.
+            // roomRef.current.connection.close(); 
+            // Actually, to support REJOIN, we must arguably just close the socket or leave with consented=false?
+            // Colyseus: leave(consented?: boolean)
+            // If consented=true, server removes player immediately.
+            // If consented=false, server waits for reconnection.
+            roomRef.current.leave(false); 
+        }
+        setConnected(false);
+        setMySessionId("");
+        setGameState(null);
+        setPlayers([]);
+        setRevealData(null);
     };
+
 
     const handlePlayCardClick = (index: number) => {
         if (!gameState || gameState.currentTurn !== mySessionId) return;
@@ -298,6 +308,16 @@ function App() {
         });
         setShowTargetModal(false);
     };
+
+    const [showRoundEndModal, setShowRoundEndModal] = useState(false);
+
+    useEffect(() => {
+        if (gameState?.gamePhase === 'round_end') {
+            setShowRoundEndModal(true);
+        } else {
+            setShowRoundEndModal(false);
+        }
+    }, [gameState?.gamePhase]);
 
     if (!connected) {
         return (
@@ -332,11 +352,18 @@ function App() {
         );
     }
 
-    // Determine view
-    const isGameActive = gameState?.gamePhase === 'playing' || gameState?.gamePhase === 'round_end';
+    if (!gameState) return null; // Should not happen if connected
 
-    if (!isGameActive) {
-        return <Lobby players={players} onStart={handleStartGame} isHost={gameState?.hostId === mySessionId} onExit={handleExitGame} />;
+    // Waiting Room / Lobby
+    if (gameState.gamePhase === "waiting") {
+        return (
+            <Lobby 
+                players={players} 
+                onStart={handleStartGame}
+                isHost={gameState.hostId === mySessionId}
+                onExit={handleExitGame}
+            />
+        );
     }
 
     const myPlayer = players.find(p => p.id === mySessionId);
@@ -370,23 +397,37 @@ function App() {
             />
 
             {myPlayer && !myPlayer.isEliminated && (
-                <Hand
-                    cards={myPlayer.hand}
-                    onPlay={handlePlayCardClick}
-                    isMyTurn={gameState.currentTurn === mySessionId}
-                    disabledIndices={disabledIndices}
-                    onIllegalMove={addNotification}
-                />
+                <div className="fixed bottom-0 left-0 right-0 pointer-events-none z-10">
+                    {/* Score Display */}
+                    <div className="absolute bottom-64 left-1/2 transform -translate-x-1/2 -mb-2 text-center text-yellow-400 font-bold text-shadow-md">
+                        Score: {myPlayer.score} / {gameState.winningScore || 3}
+                    </div>
+
+                    <Hand
+                        cards={myPlayer.hand}
+                        onPlay={handlePlayCardClick}
+                        isMyTurn={gameState.currentTurn === mySessionId}
+                        disabledIndices={disabledIndices}
+                        onIllegalMove={addNotification}
+                    />
+                </div>
             )}
 
-            {gameState.gamePhase === 'round_end' && (
+            {showRoundEndModal && (
                 <div className="absolute inset-0 backdrop-blur-md bg-black/40 flex items-center justify-center z-50">
                     <div className="bg-white text-black p-8 rounded-lg text-center shadow-2xl border border-white/20">
                         <h2 className="text-3xl font-bold mb-4">Round Over!</h2>
                         <p className="text-xl mb-6">Winner: {players.find(p => p.id === gameState.winner)?.name}</p>
-                        <button onClick={handleStartGame} className="px-6 py-3 bg-blue-600 text-white rounded font-bold hover:bg-blue-700">
-                            Play Again
-                        </button>
+                        <p className="text-gray-600 mb-6 font-bold text-lg">
+                            {gameState.winner === mySessionId ? "You won this round!" : "Better luck next time!"}
+                        </p>
+                        <div className="flex items-center justify-center space-x-2 text-blue-600 font-semibold animate-pulse">
+                            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Starting next round...</span>
+                        </div>
                     </div>
                 </div>
             )}

@@ -2,12 +2,14 @@ import React from 'react';
 
 interface LobbyProps {
     players: any[];
-    onStart: () => void;
+    onStart: (winningScore?: number) => void;
     isHost: boolean;
     onExit: () => void;
 }
 
 export const Lobby: React.FC<LobbyProps> = ({ players, onStart, isHost, onExit }) => {
+    const [winningScore, setWinningScore] = React.useState(3);
+
     return (
         <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
             <h1 className="text-4xl font-bold mb-8">Love Letter Lobby</h1>
@@ -31,11 +33,27 @@ export const Lobby: React.FC<LobbyProps> = ({ players, onStart, isHost, onExit }
                         </li>
                     ))}
                 </ul>
+                
+                {isHost && (
+                    <div className="mb-6">
+                        <label className="block text-sm font-bold mb-2 text-gray-300">Target Score to Win:</label>
+                        <select
+                            value={winningScore}
+                            onChange={(e) => setWinningScore(Number(e.target.value))}
+                            className="w-full p-2 bg-gray-700 rounded border border-gray-600 text-white"
+                        >
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                                <option key={n} value={n}>{n} Points</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
                 {isHost ? (
                     <button
-                        onClick={onStart}
+                        onClick={() => onStart(winningScore)}
                         disabled={players.length < 2}
-                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 py-2 rounded font-bold"
+                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 py-2 rounded font-bold transition-all"
                     >
                         Start Game
                     </button>

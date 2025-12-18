@@ -41,6 +41,7 @@ export class LoveLetterState extends Schema {
     @type("string") gamePhase: string = "waiting"; // waiting, playing, round_end
     @type("string") winner: string = "";
     @type("string") hostId: string = "";
+    @type("number") winningScore: number = 3;
 
     // Helper to add player
     createPlayer(sessionId: string, name: string, discordId: string = "", avatarUrl: string = "") {
