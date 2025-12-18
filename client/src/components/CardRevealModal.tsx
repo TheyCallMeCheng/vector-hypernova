@@ -30,7 +30,7 @@ export const CardRevealModal: React.FC<CardRevealModalProps> = ({ targetName, ca
                 animate={{ scale: 1, opacity: 1, rotateY: 0 }}
                 exit={{ scale: 0.5, opacity: 0 }}
                 transition={{ type: "spring", damping: 15 }}
-                className="relative bg-black/60 backdrop-blur-xl p-8 rounded-xl shadow-2xl flex flex-col items-center max-w-sm w-full mx-4 border border-white/20"
+                className="relative flex flex-col items-center max-w-sm w-full mx-4"
             >
                 <h2 className="text-2xl font-bold text-white mb-8 text-center drop-shadow-md">
                     <span className="text-yellow-400">{targetName}</span> shows you:
