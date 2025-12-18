@@ -398,9 +398,29 @@ function App() {
 
             {myPlayer && !myPlayer.isEliminated && (
                 <div className="fixed bottom-0 left-0 right-0 pointer-events-none z-10">
-                    {/* Score Display */}
-                    <div className="absolute bottom-64 left-1/2 transform -translate-x-1/2 -mb-2 text-center text-yellow-400 font-bold text-shadow-md">
-                        Score: {myPlayer.score} / {gameState.winningScore || 3}
+                    {/* Profile & Score Display - Bottom Left */}
+                    <div className="absolute bottom-8 left-8 flex items-center bg-black/50 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-lg pointer-events-auto">
+                        {/* Avatar */}
+                         {myPlayer.avatarUrl ? (
+                            <img 
+                                src={myPlayer.avatarUrl} 
+                                alt={myPlayer.name}
+                                className="w-12 h-12 rounded-full border-2 border-yellow-400 shadow-sm mr-3 object-cover" 
+                            />
+                        ) : (
+                             <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-xl font-bold border-2 border-white mr-3 shadow-sm">
+                                {myPlayer.name[0]}
+                             </div>
+                        )}
+                        
+                        <div className="flex flex-col">
+                             <div className="text-white font-bold text-lg truncate max-w-[12rem] leading-tight" title={myPlayer.name}>
+                                {myPlayer.name}
+                             </div>
+                             <div className="text-yellow-400 font-bold text-sm">
+                                Score: {myPlayer.score} / {gameState.winningScore || 3}
+                             </div>
+                        </div>
                     </div>
 
                     <Hand

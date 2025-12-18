@@ -51,13 +51,14 @@ export const Card: React.FC<CardProps> = ({
 
     return (
         <motion.div
-            layout // Helper for shared layout animations (sliding when neighbors are removed)
+            // Removed 'layout' to prevent conflict with parent Layout animation and allow simple transform origin
             initial={{ scale: 0.8, opacity: 0, y: 50 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.8, opacity: 0, y: -50 }}
             whileHover={!disabled ? { scale: 1.4, zIndex: 10 } : {}}
             whileTap={!disabled ? { scale: 0.95 } : {}}
             onClick={!disabled ? onClick : undefined}
+            style={{ transformOrigin: "bottom center" }} // Enforce upward scaling
             className={`
                 ${sizeClasses} rounded-lg cursor-pointer shadow-xl relative select-none overflow-hidden origin-bottom
                 ${disabled ? 'grayscale cursor-not-allowed border-2 border-red-500 opacity-80' : 'border-2 border-gray-400 opacity-100'}
