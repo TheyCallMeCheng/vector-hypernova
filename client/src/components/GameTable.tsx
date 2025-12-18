@@ -34,7 +34,7 @@ export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, 
                 Exit Game
             </button>
             {/* Opponents Area */}
-            <div className="flex justify-center space-x-8 pt-8">
+            <div className="absolute top-0 w-full flex justify-center space-x-8 pt-8">
                 {otherPlayers.map(p => (
                     <div key={p.id} className={`flex flex-col items-center p-4 rounded-lg ${activePlayerId === p.id ? 'bg-yellow-900 bg-opacity-50 border-2 border-yellow-500' : ''}`}>
                         {p.avatarUrl ? (

@@ -266,7 +266,17 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
         else if (card.value === 2) {
             if (target) {
                 const targetCard = target.hand.at(0);
-                client.send("private_message", `${target.name} has a ${targetCard.name} (${targetCard.value})`);
+                // Send structured data for the modal instead of just text
+                client.send("card_reveal", {
+                    targetName: target.name,
+                    card: {
+                        name: targetCard.name,
+                        value: targetCard.value,
+                        desc: targetCard.description
+                    }
+                });
+                
+                // Keep the text log for history/broadcast (generic message to others)
                 this.broadcast("message", `${player.name} looked at ${target.name}'s hand.`);
             }
         }

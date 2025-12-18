@@ -5,7 +5,9 @@ import { Lobby } from './components/Lobby';
 import { GameTable } from './components/GameTable';
 import { Hand } from './components/Hand';
 import { TargetModal } from './components/TargetModal';
+import { CardRevealModal } from './components/CardRevealModal';
 import { DiscordSDK } from '@discord/embedded-app-sdk';
+import { AnimatePresence } from 'framer-motion';
 
 // Discord SDK instance
 let discordSdk: DiscordSDK | null = null;
@@ -127,6 +129,9 @@ function App() {
     const [gameState, setGameState] = useState<any>(null);
     const [mySessionId, setMySessionId] = useState<string>('');
     const [logs, setLogs] = useState<string[]>([]);
+    
+    // Modal State
+    const [revealData, setRevealData] = useState<{ targetName: string; card: any } | null>(null);
 
     // UI State
     const [showTargetModal, setShowTargetModal] = useState(false);
@@ -177,6 +182,12 @@ function App() {
 
             roomInstance.onMessage("private_message", (msg: string) => {
                 setLogs(prev => [...prev, `[PRIVATE] ${msg}`]);
+                // Removed alert in favor of card_reveal event for Priest
+            });
+            
+            roomInstance.onMessage("card_reveal", (data: { targetName: string; card: any }) => {
+                console.log("Card reveal received:", data);
+                setRevealData(data);
             });
 
             roomInstance.onMessage("error", (msg: string) => {
@@ -351,6 +362,16 @@ function App() {
                     needsGuess={needsGuess}
                 />
             )}
+
+            <AnimatePresence>
+                {revealData && (
+                    <CardRevealModal 
+                        targetName={revealData.targetName}
+                        card={revealData.card}
+                        onClose={() => setRevealData(null)}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }
