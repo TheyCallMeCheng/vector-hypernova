@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card } from './Card';
+import backCard from '../assets/img/back.png';
 
 interface Player {
     id: string;
@@ -65,37 +66,56 @@ export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, 
             {/* Center Area: Deck & Discard */}
             <div className="flex-1 flex items-center justify-center space-x-12 pb-40">
                 {/* Deck */}
-                <div className="w-24 h-36 bg-blue-900 border-2 border-white rounded-lg flex items-center justify-center shadow-lg">
-                    <span className="text-2xl font-bold">{deckCount}</span>
+                {/* Deck */}
+                {/* Deck Group */}
+                <div className="flex flex-row items-center gap-4">
+                    <div className="flex flex-col items-end text-right">
+                        <span className="text-white/50 text-xs font-bold tracking-widest uppercase">Deck</span>
+                        <span className="text-white text-xl font-bold">{deckCount} Left</span>
+                    </div>
+                    <div className="relative w-32 h-48 rounded-lg shadow-xl transform transition-transform group hover:scale-105">
+                        <img 
+                            src={backCard} 
+                            alt="Deck" 
+                            className="w-full h-full object-cover rounded-lg border-2 border-white/20" 
+                        />
+                    </div>
                 </div>
 
-                {/* Discard Pile */}
-                <div 
-                    className="relative w-24 h-36 cursor-pointer hover:scale-105 transition-transform"
-                    onClick={onOpenDiscard}
-                    title="Click to view all discarded cards"
-                >
-                    {discardPile.slice(-5).map((card, i) => (
-                        <div
-                            key={i}
-                            className="absolute inset-0 shadow-md rounded-lg"
-                            style={{ transform: `rotate(${i * 5}deg) translate(${i * 2}px, ${i * 2}px)`, zIndex: i }}
-                        >
-                             <Card 
-                                value={card.value}
-                                name={card.name}
-                                description={card.description}
-                                variant="mini"
-                                hoverable={false}
-                                disabled={false} // Ensure it shows color
-                             />
-                        </div>
-                    ))}
-                    {discardPile.length === 0 && (
-                        <div className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center text-gray-500 bg-black/20">
-                            Discard
-                        </div>
-                    )}
+                {/* Discard Group */}
+                <div className="flex flex-row items-center gap-4">
+                    <div 
+                        className="relative w-32 h-48 cursor-pointer hover:scale-105 transition-transform"
+                        onClick={onOpenDiscard}
+                        title="Click to view all discarded cards"
+                    >
+                        {discardPile.slice(-5).map((card, i) => (
+                            <div
+                                key={i}
+                                className="absolute inset-0 shadow-md rounded-lg"
+                                style={{ transform: `rotate(${i * 5}deg) translate(${i * 2}px, ${i * 2}px)`, zIndex: i }}
+                            >
+                                 <Card 
+                                    value={card.value}
+                                    name={card.name}
+                                    description={card.description}
+                                    variant="mini"
+                                    hoverable={false}
+                                    disabled={false} // Ensure it shows color
+                                    className="w-32 h-48"
+                                 />
+                            </div>
+                        ))}
+                        {discardPile.length === 0 && (
+                            <div className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center text-gray-500 bg-black/20">
+                                Discard
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-white/50 text-xs font-bold tracking-widest uppercase">Discard</span>
+                        <span className="text-white text-xl font-bold">{discardPile.length} Cards</span>
+                    </div>
                 </div>
             </div>
 
