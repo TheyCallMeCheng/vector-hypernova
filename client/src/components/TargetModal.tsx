@@ -18,12 +18,12 @@ interface TargetModalProps {
 }
 
 export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayerId, cardName, onSelect, onCancel, needsGuess }) => {
-    const [selectedTarget, setSelectedTarget] = useState<string>('');
-    const [guessValue, setGuessValue] = useState<number>(2); // Default to Priest (2)
-
-    // Filter: Not eliminated, Not myself (unless Prince, but simple rule for now: Not myself)
-    // We allow selecting protected players now so we don't stall, logic handles the block.
+    // Filter: Not eliminated, Not myself
     const validTargets = players.filter(p => !p.isEliminated && p.id !== currentPlayerId);
+    
+    // Auto-select the first valid target
+    const [selectedTarget, setSelectedTarget] = useState<string>(validTargets.length > 0 ? validTargets[0].id : '');
+    const [guessValue, setGuessValue] = useState<number>(2); // Default to Priest (2)
 
     const handleSubmit = () => {
         if (selectedTarget) {
@@ -32,8 +32,8 @@ export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayer
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white text-black p-6 rounded-lg w-96">
+        <div className="fixed inset-0 backdrop-blur-md bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white text-black p-6 rounded-lg w-96 shadow-2xl border border-white/20">
                 <h3 className="text-xl font-bold mb-4">Play {cardName}</h3>
 
                 <div className="mb-4">
@@ -43,7 +43,6 @@ export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayer
                         value={selectedTarget}
                         onChange={(e) => setSelectedTarget(e.target.value)}
                     >
-                        <option value="">-- Select Player --</option>
                         {validTargets.map(p => (
                             <option key={p.id} value={p.id}>
                                 {p.name} {p.isProtected ? '(Protected)' : ''}
@@ -72,7 +71,7 @@ export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayer
                 )}
 
                 <div className="flex justify-end space-x-2">
-                    <button onClick={onCancel} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+                    <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">Cancel</button>
                     <button
                         onClick={handleSubmit}
                         disabled={!selectedTarget}

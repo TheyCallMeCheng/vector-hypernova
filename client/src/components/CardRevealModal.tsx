@@ -19,7 +19,7 @@ export const CardRevealModal: React.FC<CardRevealModalProps> = ({ targetName, ca
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-black bg-opacity-80"
+                className="absolute inset-0 backdrop-blur-md bg-black/40"
                 onClick={onClose}
             />
 
@@ -29,7 +29,7 @@ export const CardRevealModal: React.FC<CardRevealModalProps> = ({ targetName, ca
                 animate={{ scale: 1, opacity: 1, rotateY: 0 }}
                 exit={{ scale: 0.5, opacity: 0 }}
                 transition={{ type: "spring", damping: 15 }}
-                className="relative bg-gray-800 p-8 rounded-xl shadow-2xl flex flex-col items-center max-w-sm w-full mx-4 border-2 border-yellow-500"
+                className="relative bg-gray-800 p-8 rounded-xl shadow-2xl flex flex-col items-center max-w-sm w-full mx-4 border border-white/10"
             >
                 <h2 className="text-2xl font-bold text-white mb-6 text-center">
                     <span className="text-yellow-400">{targetName}</span> shows you:

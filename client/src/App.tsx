@@ -380,8 +380,8 @@ function App() {
             )}
 
             {gameState.gamePhase === 'round_end' && (
-                <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-                    <div className="bg-white text-black p-8 rounded-lg text-center">
+                <div className="absolute inset-0 backdrop-blur-md bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white text-black p-8 rounded-lg text-center shadow-2xl border border-white/20">
                         <h2 className="text-3xl font-bold mb-4">Round Over!</h2>
                         <p className="text-xl mb-6">Winner: {players.find(p => p.id === gameState.winner)?.name}</p>
                         <button onClick={handleStartGame} className="px-6 py-3 bg-blue-600 text-white rounded font-bold hover:bg-blue-700">
