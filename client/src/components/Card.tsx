@@ -6,12 +6,20 @@ import guardImg from '../assets/img/guard.png';
 import priestImg from '../assets/img/priest.png';
 import baronImg from '../assets/img/baron.png';
 import princeImg from '../assets/img/prince.png';
+import handmaidImg from '../assets/img/handmaid.png';
+import kingImg from '../assets/img/king.png';
+import countessImg from '../assets/img/countess.png';
+import princessImg from '../assets/img/princess.png';
 
 const CARD_IMAGES: Record<string, string> = {
     "Guard": guardImg,
     "Priest": priestImg,
     "Baron": baronImg,
     "Prince": princeImg,
+    "Handmaid": handmaidImg,
+    "King": kingImg,
+    "Countess": countessImg,
+    "Princess": princessImg,
     // Add others as they become available
 };
 
