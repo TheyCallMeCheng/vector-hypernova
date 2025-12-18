@@ -246,8 +246,17 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
         let target = targetId ? this.state.players.get(targetId) : null;
 
         // Validate target
-        if (target && (target.isEliminated || target.isProtected)) {
-            target = null; // Target is invalid/immune
+        // Validate target
+        if (target && target.isEliminated) {
+            target = null; // Target is invalid
+        } else if (target && target.isProtected) {
+            // Target is protected: The move happens, but effect is blocked
+            this.broadcast("message", `${player.name} targeted ${target.name}, but they are protected by the Handmaid!`);
+            this.broadcast("handmaid_protection", {
+                triggeringPlayer: player.name,
+                protectedPlayer: target.name
+            });
+            target = null; // Effect is blocked
         }
 
         // 1. Guard: Guess hand
@@ -272,7 +281,7 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
                     card: {
                         name: targetCard.name,
                         value: targetCard.value,
-                        desc: targetCard.description
+                        description: targetCard.description
                     }
                 });
                 

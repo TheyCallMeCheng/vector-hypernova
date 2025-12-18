@@ -6,6 +6,8 @@ import { GameTable } from './components/GameTable';
 import { Hand } from './components/Hand';
 import { TargetModal } from './components/TargetModal';
 import { CardRevealModal } from './components/CardRevealModal';
+import { HandmaidAnimation } from './components/HandmaidAnimation';
+import { GameNotifications, type Notification } from './components/GameNotifications';
 import { DiscordSDK } from '@discord/embedded-app-sdk';
 import { AnimatePresence } from 'framer-motion';
 
@@ -128,10 +130,21 @@ function App() {
     const [players, setPlayers] = useState<any[]>([]);
     const [gameState, setGameState] = useState<any>(null);
     const [mySessionId, setMySessionId] = useState<string>('');
-    const [logs, setLogs] = useState<string[]>([]);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    
+    // Helper to add notification
+    const addNotification = (msg: string) => {
+        const id = Date.now().toString() + Math.random();
+        setNotifications(prev => [...prev, { id, message: msg }]);
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            setNotifications(prev => prev.filter(n => n.id !== id));
+        }, 5000);
+    };
     
     // Modal State
     const [revealData, setRevealData] = useState<{ targetName: string; card: any } | null>(null);
+    const [showHandmaidAnimation, setShowHandmaidAnimation] = useState(false);
 
     // UI State
     const [showTargetModal, setShowTargetModal] = useState(false);
@@ -177,17 +190,23 @@ function App() {
             });
 
             roomInstance.onMessage("message", (msg: string) => {
-                setLogs(prev => [...prev, msg]);
+                addNotification(msg);
             });
 
             roomInstance.onMessage("private_message", (msg: string) => {
-                setLogs(prev => [...prev, `[PRIVATE] ${msg}`]);
+                addNotification(`[PRIVATE] ${msg}`);
                 // Removed alert in favor of card_reveal event for Priest
             });
             
             roomInstance.onMessage("card_reveal", (data: { targetName: string; card: any }) => {
                 console.log("Card reveal received:", data);
                 setRevealData(data);
+            });
+            
+            roomInstance.onMessage("handmaid_protection", (data: any) => {
+                console.log("Handmaid protection triggered:", data);
+                setShowHandmaidAnimation(true);
+                setTimeout(() => setShowHandmaidAnimation(false), 2000);
             });
 
             roomInstance.onMessage("error", (msg: string) => {
@@ -242,7 +261,9 @@ function App() {
         setConnected(false);
         setPlayers([]);
         setGameState(null);
-        setLogs([]);
+        setPlayers([]);
+        setGameState(null);
+        setNotifications([]);
     };
 
     const handleStartGame = () => {
@@ -328,7 +349,6 @@ function App() {
                 activePlayerId={gameState.currentTurn}
                 deckCount={gameState.deck.length}
                 discardPile={gameState.discardPile}
-                logs={logs}
                 onExit={handleExitGame}
             />
 
@@ -372,6 +392,18 @@ function App() {
                     />
                 )}
             </AnimatePresence>
+
+            {/* Handmaid Protection Animation */}
+            <AnimatePresence>
+                {showHandmaidAnimation && <HandmaidAnimation />}
+            </AnimatePresence>
+            {/* Handmaid Protection Animation */}
+            <AnimatePresence>
+                {showHandmaidAnimation && <HandmaidAnimation />}
+            </AnimatePresence>
+
+            {/* Game Notifications (Toasts) */}
+            <GameNotifications notifications={notifications} />
         </div>
     );
 }

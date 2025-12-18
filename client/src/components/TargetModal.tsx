@@ -21,8 +21,9 @@ export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayer
     const [selectedTarget, setSelectedTarget] = useState<string>('');
     const [guessValue, setGuessValue] = useState<number>(2); // Default to Priest (2)
 
-    // Filter: Not eliminated, Not protected, Not myself
-    const validTargets = players.filter(p => !p.isEliminated && !p.isProtected && p.id !== currentPlayerId);
+    // Filter: Not eliminated, Not myself (unless Prince, but simple rule for now: Not myself)
+    // We allow selecting protected players now so we don't stall, logic handles the block.
+    const validTargets = players.filter(p => !p.isEliminated && p.id !== currentPlayerId);
 
     const handleSubmit = () => {
         if (selectedTarget) {
@@ -44,7 +45,9 @@ export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayer
                     >
                         <option value="">-- Select Player --</option>
                         {validTargets.map(p => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
+                            <option key={p.id} value={p.id}>
+                                {p.name} {p.isProtected ? '(Protected)' : ''}
+                            </option>
                         ))}
                     </select>
                 </div>

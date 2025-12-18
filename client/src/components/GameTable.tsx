@@ -16,11 +16,10 @@ interface GameTableProps {
     activePlayerId: string; // Whose turn is it
     deckCount: number;
     discardPile: any[];
-    logs: string[];
     onExit: () => void;
 }
 
-export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, activePlayerId, deckCount, discardPile, logs, onExit }) => {
+export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, activePlayerId, deckCount, discardPile, onExit }) => {
     // Filter out myself to show others around the table
     const otherPlayers = players.filter(p => p.id !== currentPlayerId);
 
@@ -49,9 +48,12 @@ export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, 
                             </div>
                         )}
                         <div className="text-center">
-                            <div className="font-bold">{p.name}</div>
+                            <div className="font-bold flex items-center justify-center gap-1">
+                                {p.name}
+                                {p.isProtected && <span title="Protected by Handmaid">🛡️</span>}
+                            </div>
                             <div className="text-xs text-gray-400">Score: {p.score}</div>
-                            {p.isProtected && <div className="text-xs text-green-400">PROTECTED</div>}
+                            {/* Removed text based protection indicator */}
                             {p.isEliminated && <div className="text-xs text-red-500">ELIMINATED</div>}
                         </div>
                     </div>
@@ -81,12 +83,7 @@ export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, 
                 </div>
             </div>
 
-            {/* Game Log */}
-            <div className="absolute top-4 right-4 w-64 h-64 bg-black bg-opacity-50 rounded p-2 overflow-y-auto text-xs font-mono">
-                {logs.map((log, i) => (
-                    <div key={i} className="mb-1 border-b border-gray-700 pb-1">{log}</div>
-                ))}
-            </div>
+            {/* Game Log Removed in favor of Notifications */}
         </div>
     );
 };
