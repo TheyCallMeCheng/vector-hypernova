@@ -13,10 +13,13 @@ interface HandProps {
     cards: CardData[];
     onPlay: (index: number) => void;
     isMyTurn: boolean;
+    disabledIndices?: number[];
+    onIllegalMove?: (reason: string) => void;
 }
 
-export const Hand: React.FC<HandProps> = ({ cards, onPlay, isMyTurn }) => {
+export const Hand: React.FC<HandProps> = ({ cards, onPlay, isMyTurn, disabledIndices = [], onIllegalMove }) => {
     const { playCardHover, playCardSelect, playYourTurn, playDealCard } = useSoundManager();
+    const [shakingCardIndex, setShakingCardIndex] = React.useState<number | null>(null);
 
     // Effect for "Your Turn" sound
     useEffect(() => {
@@ -25,68 +28,71 @@ export const Hand: React.FC<HandProps> = ({ cards, onPlay, isMyTurn }) => {
         }
     }, [isMyTurn, playYourTurn]);
 
-    // Effect for "Deal" sound when cards change (simple heuristic)
+    // Effect for "Deal" sound
     useEffect(() => {
         if (cards.length > 0) {
             playDealCard();
         }
     }, [cards.length, playDealCard]);
 
+    const handleDisabledClick = (index: number) => {
+        setShakingCardIndex(index);
+        setTimeout(() => setShakingCardIndex(null), 400);
+        if (onIllegalMove) {
+            onIllegalMove("You must play the Countess!");
+        }
+    };
+
     return (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 flex justify-center items-end h-64 w-full pointer-events-none">
-            {/* 
-                pointer-events-none on container so we don't block clicks around the hand.
-                The cards themselves will re-enable pointer-events.
-            */}
             <motion.div
                 className="flex space-x-4 pointer-events-auto items-end pb-4"
             >
                 <AnimatePresence>
-                    {cards.map((card, index) => (
-                        <motion.div
-                            key={`${card.name}-${index}-${card.value}`} // Unique key needed for AnimatePresence
-                            // Initial state for "Dealing" animation: start from center screen (approximate deck location)
-                            initial={{
-                                x: 0,
-                                y: -window.innerHeight / 2,
-                                scale: 0.2,
-                                opacity: 0
-                            }}
-                            // Animate to final position in hand
-                            animate={{
-                                x: 0,
-                                y: 0,
-                                scale: 1,
-                                opacity: 1,
-                                transition: {
-                                    type: 'spring',
-                                    stiffness: 200,
-                                    damping: 20,
-                                    delay: index * 0.1 // Stagger effect
-                                }
-                            }}
-                            // Exit animation (playing a card)
-                            exit={{
-                                y: -200,
-                                opacity: 0,
-                                scale: 0.5,
-                                transition: { duration: 0.3 }
-                            }}
-                            onHoverStart={playCardHover}
-                        >
-                            <Card
-                                {...card}
-                                active={isMyTurn}
-                                disabled={!isMyTurn}
+                    {cards.map((card, index) => {
+                        const isDisabled = disabledIndices.includes(index);
+                        const isShaking = shakingCardIndex === index;
+
+                        return (
+                            <motion.div
+                                key={`${card.name}-${index}-${card.value}`}
+                                layout
+                                initial={{ x: 0, y: -window.innerHeight / 2, scale: 0.2, opacity: 0 }}
+                                animate={isShaking ? { 
+                                    x: [-5, 5, -5, 5, 0], 
+                                    y: 0, 
+                                    scale: 1, 
+                                    opacity: 1, 
+                                    transition: { duration: 0.4 } 
+                                } : {
+                                    x: 0,
+                                    y: 0,
+                                    scale: 1,
+                                    opacity: 1,
+                                    transition: { type: 'spring', stiffness: 200, damping: 20, delay: index * 0.1 }
+                                }}
+                                exit={{ y: -200, opacity: 0, scale: 0.5, transition: { duration: 0.3 } }}
+                                onHoverStart={playCardHover}
                                 onClick={() => {
-                                    if (isMyTurn) {
-                                        playCardSelect();
-                                        onPlay(index);
+                                    if (isDisabled && isMyTurn) {
+                                        handleDisabledClick(index);
                                     }
                                 }}
-                            />
-                        </motion.div>
-                    ))}
+                            >
+                                <Card
+                                    {...card}
+                                    active={isMyTurn && !isDisabled}
+                                    disabled={!isMyTurn || isDisabled}
+                                    onClick={() => {
+                                        if (isMyTurn && !isDisabled) {
+                                            playCardSelect();
+                                            onPlay(index);
+                                        }
+                                    }}
+                                />
+                            </motion.div>
+                        );
+                    })}
                 </AnimatePresence>
             </motion.div>
         </div>

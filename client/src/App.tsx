@@ -341,6 +341,23 @@ function App() {
 
     const myPlayer = players.find(p => p.id === mySessionId);
 
+    // Countess Check Logic
+    const disabledIndices: number[] = [];
+    if (myPlayer && myPlayer.hand && gameState.currentTurn === mySessionId) {
+        const hand = myPlayer.hand;
+        const hasCountess = hand.some((c: any) => c.value === 7);
+        const hasRoyal = hand.some((c: any) => c.value === 5 || c.value === 6);
+
+        if (hasCountess && hasRoyal) {
+            // Must play Countess (7). So disable anything that is 5 or 6.
+            hand.forEach((c: any, index: number) => {
+                if (c.value === 5 || c.value === 6) {
+                    disabledIndices.push(index);
+                }
+            });
+        }
+    }
+
     return (
         <div className="h-screen bg-green-900 text-white flex flex-col overflow-hidden">
             <GameTable
@@ -357,6 +374,8 @@ function App() {
                     cards={myPlayer.hand}
                     onPlay={handlePlayCardClick}
                     isMyTurn={gameState.currentTurn === mySessionId}
+                    disabledIndices={disabledIndices}
+                    onIllegalMove={addNotification}
                 />
             )}
 

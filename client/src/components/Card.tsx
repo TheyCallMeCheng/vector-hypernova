@@ -30,8 +30,8 @@ export const Card: React.FC<CardProps> = ({
             onClick={!disabled ? onClick : undefined}
             className={`
                 w-32 h-48 bg-white text-black border-2 rounded-lg p-3 cursor-pointer shadow-xl relative select-none
-                ${disabled ? 'opacity-60 grayscale cursor-not-allowed' : 'opacity-100'}
-                ${active ? 'ring-4 ring-yellow-400 shadow-yellow-400/50' : 'border-gray-400'}
+                ${disabled ? 'opacity-80 grayscale cursor-not-allowed border-red-500' : 'opacity-100 border-gray-400'}
+                ${active ? 'ring-4 ring-yellow-400 shadow-yellow-400/50' : ''}
             `}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         >
