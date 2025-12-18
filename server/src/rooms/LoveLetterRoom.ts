@@ -348,6 +348,31 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
             if (target) {
                 const myCard = player.hand.at(0); // The remaining card
                 const targetCard = target.hand.at(0);
+                
+                // Determine winner logic first
+                let winnerId: string | null = null;
+                if (myCard.value > targetCard.value) {
+                    winnerId = client.sessionId;
+                } else if (targetCard.value > myCard.value) {
+                    winnerId = targetId; // targetId is guaranteed to be string here if target exists
+                }
+                
+                // Send Reveal Data to BOTH players involved
+                const revealData = {
+                    initiatorName: player.name,
+                    initiatorCard: { name: myCard.name, value: myCard.value, desc: myCard.description },
+                    targetName: target.name,
+                    targetCard: { name: targetCard.name, value: targetCard.value, desc: targetCard.description },
+                    winnerId: winnerId
+                };
+
+                client.send("baron_reveal", revealData);
+                const targetClient = this.clients.find(c => c.sessionId === targetId);
+                if (targetClient) {
+                    targetClient.send("baron_reveal", revealData);
+                }
+
+                // Execute Logic
                 if (myCard.value > targetCard.value) {
                     target.isEliminated = true;
                     this.broadcast("message", `${player.name} wins Baron duel against ${target.name}.`);

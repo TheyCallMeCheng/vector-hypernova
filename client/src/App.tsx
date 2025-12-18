@@ -9,6 +9,7 @@ import { CardRevealModal } from './components/CardRevealModal';
 import { HandmaidAnimation } from './components/HandmaidAnimation';
 import { GameNotifications, type Notification } from './components/GameNotifications';
 import { DiscardModal } from "./components/DiscardModal";
+import { BaronModal } from './components/BaronModal';
 import { DiscordSDK } from '@discord/embedded-app-sdk';
 import { AnimatePresence } from 'framer-motion';
 
@@ -145,6 +146,7 @@ function App() {
     
     // Modal State
     const [revealData, setRevealData] = useState<{ targetName: string; card: any } | null>(null);
+    const [baronRevealData, setBaronRevealData] = useState<any>(null);
     const [showHandmaidAnimation, setShowHandmaidAnimation] = useState(false);
 
     // UI State
@@ -203,6 +205,10 @@ function App() {
             roomInstance.onMessage("card_reveal", (data: { targetName: string; card: any }) => {
                 console.log("Card reveal received:", data);
                 setRevealData(data);
+            });
+
+            roomInstance.onMessage("baron_reveal", (message: any) => {
+                setBaronRevealData(message);
             });
             
             roomInstance.onMessage("handmaid_protection", (data: any) => {
@@ -495,6 +501,17 @@ function App() {
                         targetName={revealData.targetName}
                         card={revealData.card}
                         onClose={() => setRevealData(null)}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Baron Modal */}
+            <AnimatePresence>
+                {baronRevealData && (
+                    <BaronModal 
+                        data={baronRevealData}
+                        mySessionId={mySessionId}
+                        onClose={() => setBaronRevealData(null)}
                     />
                 )}
             </AnimatePresence>
