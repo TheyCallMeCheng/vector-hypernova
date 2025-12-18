@@ -29,6 +29,26 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
             // message: { cardIndex: number, targetId?: string, guessValue?: number }
             this.handlePlayCard(client, message);
         });
+
+        this.onMessage("reset_game", (client) => {
+            // Only allow if game is over (or maybe host can force reset? let's allow anyone in game_over)
+            if (this.state.gamePhase === "game_over") {
+                this.state.gamePhase = "waiting";
+                this.state.deck.clear();
+                this.state.discardPile.clear();
+                this.state.winner = "";
+                
+                // Reset all player stats
+                this.state.players.forEach(p => {
+                    p.hand.clear();
+                    p.score = 0;
+                    p.isEliminated = false;
+                    p.isProtected = false;
+                });
+                
+                this.broadcast("message", "Returning to lobby...");
+            }
+        });
     }
 
     onJoin(client: Client, options: any) {
@@ -95,8 +115,9 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
         
         const player = this.state.players.get(client.sessionId);
         
-        // In lobby (waiting phase): remove player completely
-        if (this.state.gamePhase === "waiting") {
+        // In lobby (waiting phase) OR Game Over: remove player completely
+        // If game is over, we don't need to wait for reconnection, just let the room dispose if empty.
+        if (this.state.gamePhase === "waiting" || this.state.gamePhase === "game_over") {
             this.state.removePlayer(client.sessionId);
             this.reassignHostIfNeeded(client.sessionId);
             return;
@@ -453,20 +474,10 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
 
         if (winner.score >= this.state.winningScore) {
             // Game Winner
-            this.state.winner = winner.id; // Confirm winner in state
-            // Keep phase as round_end so client shows "Game Over" modal or similar?
-            // Actually, client might need to distinguish Round End vs Game End
-            // But let's use a broadcast for now to explicitly say GAME OVER
+            this.state.winner = winner.id; 
+            this.state.gamePhase = "game_over";
             this.broadcast("message", `GAME OVER! ${winner.name} wins the match!`);
-            
-            // We can set a specific variable or just move directly to waiting after a delay?
-            // The prompt says "When a player arrives at the said score... we go back to the main menu."
-            
-            // Let's set a timeout to reset to lobby
-            this.clock.setTimeout(() => {
-                this.state.gamePhase = "waiting";
-                // Reset scores? Yes, new game needs new scores.
-            }, 8000); 
+             // No auto-redirect. Players must click "Back to Main Menu".
 
         } else {
             // Next Round

@@ -432,6 +432,29 @@ function App() {
                 </div>
             )}
 
+            {gameState.gamePhase === 'game_over' && (
+                <div className="absolute inset-0 backdrop-blur-md bg-black/60 flex items-center justify-center z-50">
+                    <div className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white p-10 rounded-xl text-center shadow-2xl border-4 border-yellow-200 transform scale-110">
+                        <h1 className="text-5xl font-extrabold mb-2 drop-shadow-md">GAME OVER!</h1>
+                        <div className="text-8xl mb-4">👑</div>
+                        <h2 className="text-3xl font-bold mb-6 drop-shadow-sm">
+                            {players.find(p => p.id === gameState.winner)?.name} Wins!
+                        </h2>
+                        <p className="text-xl mb-8 font-medium">The match has concluded.</p>
+                        <button 
+                            onClick={() => {
+                                if (roomRef.current) {
+                                    roomRef.current.send("reset_game");
+                                }
+                            }}
+                            className="px-8 py-4 bg-white text-orange-600 rounded-full font-bold text-xl hover:bg-gray-100 hover:scale-105 transition-transform shadow-lg"
+                        >
+                            Return to Lobby
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {showTargetModal && (
                 <TargetModal
                     players={players}
