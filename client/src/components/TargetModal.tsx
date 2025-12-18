@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 interface Player {
     id: string;
     name: string;
+    avatarUrl?: string;
     isEliminated: boolean;
     isProtected: boolean;
 }

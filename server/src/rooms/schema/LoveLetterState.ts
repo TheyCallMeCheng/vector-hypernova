@@ -16,15 +16,20 @@ export class Card extends Schema {
 export class Player extends Schema {
     @type("string") id: string;
     @type("string") name: string;
+    @type("string") discordId: string = "";  // Discord user ID for reconnection
+    @type("string") avatarUrl: string = "";   // Discord avatar URL
+    @type("boolean") isConnected: boolean = true; // Track connection status
     @type([Card]) hand = new ArraySchema<Card>();
     @type("boolean") isEliminated: boolean = false;
     @type("boolean") isProtected: boolean = false; // Handmaid effect
     @type("number") score: number = 0;
 
-    constructor(id: string, name: string) {
+    constructor(id: string, name: string, discordId: string = "", avatarUrl: string = "") {
         super();
         this.id = id;
         this.name = name;
+        this.discordId = discordId;
+        this.avatarUrl = avatarUrl;
     }
 }
 
@@ -38,8 +43,8 @@ export class LoveLetterState extends Schema {
     @type("string") hostId: string = "";
 
     // Helper to add player
-    createPlayer(sessionId: string, name: string) {
-        this.players.set(sessionId, new Player(sessionId, name));
+    createPlayer(sessionId: string, name: string, discordId: string = "", avatarUrl: string = "") {
+        this.players.set(sessionId, new Player(sessionId, name, discordId, avatarUrl));
     }
 
     // Helper to remove player

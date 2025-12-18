@@ -7,16 +7,122 @@ import { Hand } from './components/Hand';
 import { TargetModal } from './components/TargetModal';
 import { DiscordSDK } from '@discord/embedded-app-sdk';
 
-// Mock Discord SDK for localhost
+// Discord SDK instance
 let discordSdk: DiscordSDK | null = null;
+let isDiscordEnvironment = false;
+
+console.log("=== Discord SDK Init ===");
+console.log("URL search params:", window.location.search);
+console.log("Has frame_id:", window.location.search.includes("frame_id"));
+console.log("VITE_DISCORD_CLIENT_ID:", import.meta.env.VITE_DISCORD_CLIENT_ID || "NOT SET!");
 
 try {
     if (window.location.search.includes("frame_id")) {
-        discordSdk = new DiscordSDK(import.meta.env.VITE_DISCORD_CLIENT_ID || "mock_id");
-        console.log("Discord SDK Initialized", discordSdk);
+        const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID;
+        if (!clientId) {
+            console.error("VITE_DISCORD_CLIENT_ID is not set in .env!");
+        }
+        discordSdk = new DiscordSDK(clientId || "mock_id");
+        isDiscordEnvironment = true;
+        console.log("Discord SDK Initialized successfully!", discordSdk);
+    } else {
+        console.log("Not in Discord environment (no frame_id in URL)");
     }
 } catch (e) {
-    console.warn("Discord SDK not initialized (running locally?)", e);
+    console.error("Discord SDK initialization FAILED:", e);
+}
+
+interface DiscordUser {
+    id: string;
+    username: string;
+    avatar: string | null;
+    discriminator: string;
+    global_name: string | null;
+}
+
+// Track auth promise to prevent duplicate auth flows (React Strict Mode)
+let authPromise: Promise<{ userName: string; discordId: string; avatarUrl: string }> | null = null;
+
+async function getDiscordAuth(): Promise<{ userName: string; discordId: string; avatarUrl: string }> {
+    // Default fallback values
+    let userName = "Player " + Math.floor(Math.random() * 1000);
+    let discordId = "";
+    let avatarUrl = "";
+    
+    if (!isDiscordEnvironment || !discordSdk) {
+        console.log("Not in Discord, using fallback name:", userName);
+        return { userName, discordId, avatarUrl };
+    }
+    
+    try {
+        console.log("Waiting for SDK ready...");
+        await discordSdk.ready();
+        console.log("Discord SDK ready!");
+        
+        console.log("Calling authorize...");
+        const authResult = await discordSdk.commands.authorize({
+            client_id: import.meta.env.VITE_DISCORD_CLIENT_ID,
+            response_type: 'code',
+            scope: ['identify'],
+        });
+        console.log("Authorization result:", authResult);
+        const { code } = authResult;
+        
+        // Use the current origin as the redirect_uri
+        // For Discord Activities, this is usually https://[DISCORD_ID].discordsays.com
+        const pUri = window.location.origin;
+        console.log("Using redirect_uri:", pUri);
+
+        console.log("Exchanging code for token...");
+        const tokenResponse = await fetch('/api/discord/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                code,
+                redirect_uri: pUri
+            }),
+        });
+        console.log("Token response status:", tokenResponse.status);
+        
+        if (!tokenResponse.ok) {
+            const errorText = await tokenResponse.text();
+            console.error("Token exchange failed:", tokenResponse.status, errorText);
+            return { userName, discordId, avatarUrl };
+        }
+        
+        const tokenData = await tokenResponse.json();
+        console.log("Token received, authenticating...");
+        
+        const auth = await discordSdk.commands.authenticate({
+            access_token: tokenData.access_token,
+        });
+        console.log("Authenticated!", auth);
+        
+        if (auth.user) {
+            const user = auth.user as DiscordUser;
+            discordId = user.id;
+            userName = user.global_name || user.username;
+            
+            if (user.avatar) {
+                avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+            } else {
+                const defaultAvatarIndex = Number((BigInt(user.id) >> BigInt(22)) % BigInt(6));
+                avatarUrl = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarIndex}.png`;
+            }
+            console.log("Got Discord user:", userName, discordId, avatarUrl);
+        }
+    } catch (e: any) {
+        console.error("=== DISCORD AUTH ERROR ===");
+        console.error("Error details:", e);
+        if (typeof e === 'object') {
+            console.error("Error keys:", Object.keys(e));
+            console.error("Error stringified:", JSON.stringify(e));
+            if (e.message) console.error("Error message:", e.message);
+            if (e.code) console.error("Error code:", e.code);
+        }
+    }
+    
+    return { userName, discordId, avatarUrl };
 }
 
 function App() {
@@ -36,13 +142,35 @@ function App() {
 
     useEffect(() => {
         let isActive = true;
+        let didJoin = false; // Track if this effect already joined
 
         const init = async () => {
-            // Mock auth or real auth
-            let userName = "Player " + Math.floor(Math.random() * 1000);
+            console.log("=== Starting Init ===");
+            
+            // Get Discord auth (or fallback) - cached so only runs once
+            if (!authPromise) {
+                authPromise = getDiscordAuth();
+            }
+            
+            // Wait for auth to complete
+            const { userName, discordId, avatarUrl } = await authPromise;
+            
+            console.log("Auth complete. Joining room with:", userName, discordId ? "(Discord)" : "(fallback)");
+            
+            // Don't join if component unmounted or already joined
+            if (!isActive || didJoin) {
+                console.log("Skipping room join - inactive or already joined");
+                return;
+            }
+            
+            didJoin = true;
 
             try {
-                const roomInstance = await joinRoom(userName);
+                const roomInstance = await joinRoom({
+                    name: userName,
+                    discordId,
+                    avatarUrl,
+                });
 
                 if (!isActive) {
                     await roomInstance.leave();

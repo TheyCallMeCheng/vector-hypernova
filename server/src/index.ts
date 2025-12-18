@@ -1,3 +1,4 @@
+import "dotenv/config"; // Load .env file
 import http from "http";
 import express from "express";
 import cors from "cors";
@@ -15,6 +16,65 @@ app.use(express.json());
 const clientBuildPath = path.join(__dirname, "../../client/dist");
 app.use(express.static(clientBuildPath));
 
+// Discord OAuth token exchange endpoint
+app.post("/api/discord/token", async (req, res) => {
+    // accept redirect_uri from the client
+    const { code, redirect_uri } = req.body;
+    
+    console.log("=== Discord Token Exchange ===");
+    console.log("Code received:", code ? "yes" : "no");
+    console.log("Redirect URI from client:", redirect_uri || "NONE");
+    
+    if (!code) {
+        return res.status(400).json({ error: "Missing authorization code" });
+    }
+    
+    try {
+        const discordClientId = process.env.DISCORD_CLIENT_ID || process.env.VITE_DISCORD_CLIENT_ID || "";
+        const discordClientSecret = process.env.DISCORD_CLIENT_SECRET || process.env.VITE_DISCORD_CLIENT_SECRET || "";
+        
+        console.log("Client ID configured:", discordClientId ? "yes" : "NO - MISSING!");
+        console.log("Client Secret configured:", discordClientSecret ? "yes" : "NO - MISSING!");
+        
+        // Use the redirect_uri provided by the client, fallback to origin header if missing
+        const origin = req.headers.origin || req.headers.referer || "";
+        const finalRedirectUri = (redirect_uri || origin).replace(/\/$/, ""); 
+        
+        console.log("Final Redirect URI being used:", finalRedirectUri);
+        
+        const params = new URLSearchParams({
+            client_id: discordClientId,
+            client_secret: discordClientSecret,
+            grant_type: "authorization_code",
+            code,
+            redirect_uri: finalRedirectUri,
+        });
+
+        console.log("Sending to Discord API:", params.toString());
+        
+        const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params,
+        });
+        
+        if (!tokenResponse.ok) {
+            const errorText = await tokenResponse.text();
+            console.error("Discord token exchange FAILED!");
+            console.error("Status:", tokenResponse.status);
+            console.error("Response:", errorText);
+            return res.status(tokenResponse.status).json({ error: "Token exchange failed", details: errorText });
+        }
+        
+        const tokenData = await tokenResponse.json();
+        console.log("Token exchange SUCCESS! Access token received.");
+        res.json(tokenData);
+    } catch (error) {
+        console.error("Discord token exchange error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 const server = http.createServer(app);
 const gameServer = new Server({
     server: server,
@@ -28,3 +88,4 @@ gameServer.define("love_letter", LoveLetterRoom);
 
 gameServer.listen(port);
 console.log(`Listening on ws://localhost:${port}`);
+

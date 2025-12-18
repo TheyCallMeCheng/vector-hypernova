@@ -12,9 +12,15 @@ const endpoint = `${protocol}//${host}/colyseus`;
 // -----------------------
 export const client = new Colyseus.Client(endpoint);
 
-export const joinRoom = async (name: string) => {
+export interface JoinOptions {
+    name: string;
+    discordId?: string;
+    avatarUrl?: string;
+}
+
+export const joinRoom = async (options: JoinOptions) => {
     try {
-        const room = await client.joinOrCreate("love_letter", { name });
+        const room = await client.joinOrCreate("love_letter", options);
         console.log("Joined room", room.sessionId);
         return room;
     } catch (e) {

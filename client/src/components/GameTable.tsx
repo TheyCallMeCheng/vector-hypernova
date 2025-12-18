@@ -3,6 +3,7 @@ import React from 'react';
 interface Player {
     id: string;
     name: string;
+    avatarUrl?: string;
     isEliminated: boolean;
     isProtected: boolean;
     score: number;
@@ -28,9 +29,17 @@ export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, 
             <div className="flex justify-center space-x-8 pt-8">
                 {otherPlayers.map(p => (
                     <div key={p.id} className={`flex flex-col items-center p-4 rounded-lg ${activePlayerId === p.id ? 'bg-yellow-900 bg-opacity-50 border-2 border-yellow-500' : ''}`}>
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold mb-2 ${p.isEliminated ? 'bg-gray-600' : 'bg-blue-500'}`}>
-                            {p.name[0]}
-                        </div>
+                        {p.avatarUrl ? (
+                            <img 
+                                src={p.avatarUrl} 
+                                alt={p.name}
+                                className={`w-16 h-16 rounded-full mb-2 object-cover ${p.isEliminated ? 'opacity-50 grayscale' : ''}`}
+                            />
+                        ) : (
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold mb-2 ${p.isEliminated ? 'bg-gray-600' : 'bg-blue-500'}`}>
+                                {p.name[0]}
+                            </div>
+                        )}
                         <div className="text-center">
                             <div className="font-bold">{p.name}</div>
                             <div className="text-xs text-gray-400">Score: {p.score}</div>

@@ -32,9 +32,55 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
 
     onJoin(client: Client, options: any) {
         console.log(client.sessionId, "joined!");
-        // Use options.name or default
+        
         const name = options.name || `Player ${this.clients.length}`;
-        this.state.createPlayer(client.sessionId, name);
+        const discordId = options.discordId || "";
+        const avatarUrl = options.avatarUrl || "";
+        
+        // Check if this is a reconnecting player (by Discord ID)
+        if (discordId) {
+            let existingPlayer: any = null;
+            let existingSessionId: string = "";
+            
+            this.state.players.forEach((player, sessionId) => {
+                if (player.discordId === discordId) {
+                    existingPlayer = player;
+                    existingSessionId = sessionId;
+                }
+            });
+            
+            if (existingPlayer && existingSessionId !== client.sessionId) {
+                // Reconnecting player - transfer their state to new session
+                console.log(`Player ${discordId} reconnecting. Old session: ${existingSessionId}, New session: ${client.sessionId}`);
+                
+                // Create new player with old state
+                const newPlayer = new Player(client.sessionId, existingPlayer.name, discordId, avatarUrl);
+                newPlayer.hand = existingPlayer.hand;
+                newPlayer.isEliminated = existingPlayer.isEliminated;
+                newPlayer.isProtected = existingPlayer.isProtected;
+                newPlayer.score = existingPlayer.score;
+                newPlayer.isConnected = true;
+                
+                // Remove old player entry
+                this.state.players.delete(existingSessionId);
+                this.state.players.set(client.sessionId, newPlayer);
+                
+                // Update currentTurn if needed
+                if (this.state.currentTurn === existingSessionId) {
+                    this.state.currentTurn = client.sessionId;
+                }
+                
+                // Update hostId if needed
+                if (this.state.hostId === existingSessionId) {
+                    this.state.hostId = client.sessionId;
+                }
+                
+                return;
+            }
+        }
+        
+        // New player joining
+        this.state.createPlayer(client.sessionId, name, discordId, avatarUrl);
         
         // Assign host if none exists or if the current host is not in the player list
         if (!this.state.hostId || !this.state.players.has(this.state.hostId)) {
@@ -44,13 +90,49 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
     }
 
     onLeave(client: Client, consented: boolean) {
-        console.log(client.sessionId, "left!");
-        this.state.removePlayer(client.sessionId);
+        console.log(client.sessionId, "left!", consented ? "(intentional)" : "(disconnected)");
         
-        // Reassign host if the host left
-        if (this.state.hostId === client.sessionId) {
+        const player = this.state.players.get(client.sessionId);
+        
+        // In lobby (waiting phase): remove player completely
+        if (this.state.gamePhase === "waiting") {
+            this.state.removePlayer(client.sessionId);
+            this.reassignHostIfNeeded(client.sessionId);
+            return;
+        }
+        
+        // During active game
+        if (player) {
+            if (consented) {
+                // Player intentionally left: mark as eliminated
+                player.isEliminated = true;
+                player.isConnected = false;
+                this.broadcast("message", `${player.name} left the game.`);
+                this.checkWinCondition();
+            } else {
+                // Disconnected unexpectedly: allow reconnection for 60 seconds
+                player.isConnected = false;
+                this.broadcast("message", `${player.name} disconnected. Waiting for reconnect...`);
+                
+                this.allowReconnection(client, 60).then(reconnectedClient => {
+                    // Player reconnected via Colyseus built-in reconnection
+                    console.log(`${client.sessionId} reconnected via allowReconnection!`);
+                    player.isConnected = true;
+                    this.broadcast("message", `${player.name} reconnected!`);
+                }).catch(() => {
+                    // Failed to reconnect in time: eliminate them
+                    console.log(`${client.sessionId} failed to reconnect in time`);
+                    player.isEliminated = true;
+                    this.broadcast("message", `${player.name} timed out and is eliminated.`);
+                    this.checkWinCondition();
+                });
+            }
+        }
+    }
+    
+    reassignHostIfNeeded(leftSessionId: string) {
+        if (this.state.hostId === leftSessionId) {
             if (this.state.players.size > 0) {
-                // Assign to the next available player
                 this.state.hostId = this.state.players.keys().next().value;
             } else {
                 this.state.hostId = "";

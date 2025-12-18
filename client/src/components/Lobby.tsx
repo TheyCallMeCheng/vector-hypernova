@@ -15,9 +15,17 @@ export const Lobby: React.FC<LobbyProps> = ({ players, onStart, isHost }) => {
                 <ul className="space-y-2 mb-6">
                     {players.map((p, i) => (
                         <li key={i} className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                {p.name[0]}
-                            </div>
+                            {p.avatarUrl ? (
+                                <img 
+                                    src={p.avatarUrl} 
+                                    alt={p.name}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                    {p.name[0]}
+                                </div>
+                            )}
                             <span>{p.name}</span>
                         </li>
                     ))}
