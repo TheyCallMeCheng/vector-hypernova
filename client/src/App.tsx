@@ -8,6 +8,7 @@ import { TargetModal } from './components/TargetModal';
 import { CardRevealModal } from './components/CardRevealModal';
 import { HandmaidAnimation } from './components/HandmaidAnimation';
 import { GameNotifications, type Notification } from './components/GameNotifications';
+import { DiscardModal } from "./components/DiscardModal";
 import { DiscordSDK } from '@discord/embedded-app-sdk';
 import { AnimatePresence } from 'framer-motion';
 
@@ -151,6 +152,7 @@ function App() {
     const [selectedCardIndex, setSelectedCardIndex] = useState<number>(-1);
     const [selectedCardName, setSelectedCardName] = useState<string>('');
     const [needsGuess, setNeedsGuess] = useState(false);
+    const [showDiscardPile, setShowDiscardPile] = useState(false);
 
     const roomRef = useRef<Colyseus.Room | null>(null);
 
@@ -394,6 +396,7 @@ function App() {
                 deckCount={gameState.deck.length}
                 discardPile={gameState.discardPile}
                 onExit={handleExitGame}
+                onOpenDiscard={() => setShowDiscardPile(true)}
             />
 
             {myPlayer && !myPlayer.isEliminated && (
@@ -500,9 +503,15 @@ function App() {
             <AnimatePresence>
                 {showHandmaidAnimation && <HandmaidAnimation />}
             </AnimatePresence>
-            {/* Handmaid Protection Animation */}
+
+            {/* Discard Modal */}
             <AnimatePresence>
-                {showHandmaidAnimation && <HandmaidAnimation />}
+                {showDiscardPile && (
+                    <DiscardModal 
+                        discardPile={gameState.discardPile} 
+                        onClose={() => setShowDiscardPile(false)} 
+                    />
+                )}
             </AnimatePresence>
 
             {/* Game Notifications (Toasts) */}

@@ -25,6 +25,7 @@ export interface CardProps {
     active?: boolean; // For "My Turn" highlighting (glow)
     className?: string; // Allow overriding dimensions/margin
     variant?: 'standard' | 'mini';
+    hoverable?: boolean;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -35,7 +36,8 @@ export const Card: React.FC<CardProps> = ({
     disabled = false,
     active = false,
     className,
-    variant = 'standard'
+    variant = 'standard',
+    hoverable = true
 }) => {
     const imageSrc = CARD_IMAGES[name];
     const sizeClasses = className || (variant === 'mini' ? "w-24 h-36" : "w-48 h-72");
@@ -55,8 +57,8 @@ export const Card: React.FC<CardProps> = ({
             initial={{ scale: 0.8, opacity: 0, y: 50 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.8, opacity: 0, y: -50 }}
-            whileHover={!disabled ? { scale: 1.4, zIndex: 10 } : {}}
-            whileTap={!disabled ? { scale: 0.95 } : {}}
+            whileHover={!disabled && hoverable ? { scale: 1.4, zIndex: 10 } : {}}
+            whileTap={!disabled && hoverable ? { scale: 0.95 } : {}}
             onClick={!disabled ? onClick : undefined}
             style={{ transformOrigin: "bottom center" }} // Enforce upward scaling
             className={`

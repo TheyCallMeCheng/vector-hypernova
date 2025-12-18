@@ -1,4 +1,5 @@
 import React from 'react';
+import { Card } from './Card';
 
 interface Player {
     id: string;
@@ -17,9 +18,10 @@ interface GameTableProps {
     deckCount: number;
     discardPile: any[];
     onExit: () => void;
+    onOpenDiscard: () => void;
 }
 
-export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, activePlayerId, deckCount, discardPile, onExit }) => {
+export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, activePlayerId, deckCount, discardPile, onExit, onOpenDiscard }) => {
     // Filter out myself to show others around the table
     const otherPlayers = players.filter(p => p.id !== currentPlayerId);
 
@@ -68,18 +70,32 @@ export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, 
                 </div>
 
                 {/* Discard Pile */}
-                <div className="relative w-24 h-36">
+                <div 
+                    className="relative w-24 h-36 cursor-pointer hover:scale-105 transition-transform"
+                    onClick={onOpenDiscard}
+                    title="Click to view all discarded cards"
+                >
                     {discardPile.slice(-5).map((card, i) => (
                         <div
                             key={i}
-                            className="absolute inset-0 bg-white text-black border border-gray-400 rounded-lg p-2 shadow"
-                            style={{ transform: `rotate(${i * 5}deg) translate(${i * 2}px, ${i * 2}px)` }}
+                            className="absolute inset-0 shadow-md rounded-lg"
+                            style={{ transform: `rotate(${i * 5}deg) translate(${i * 2}px, ${i * 2}px)`, zIndex: i }}
                         >
-                            <div className="font-bold">{card.value}</div>
-                            <div className="text-xs text-center mt-4">{card.name}</div>
+                             <Card 
+                                value={card.value}
+                                name={card.name}
+                                description={card.description}
+                                variant="mini"
+                                hoverable={false}
+                                disabled={false} // Ensure it shows color
+                             />
                         </div>
                     ))}
-                    {discardPile.length === 0 && <div className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center text-gray-500">Discard</div>}
+                    {discardPile.length === 0 && (
+                        <div className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center text-gray-500 bg-black/20">
+                            Discard
+                        </div>
+                    )}
                 </div>
             </div>
 
