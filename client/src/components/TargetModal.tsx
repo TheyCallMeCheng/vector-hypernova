@@ -65,19 +65,17 @@ export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayer
                 {needsGuess && (
                     <div className="mb-8">
                         <label className="block text-sm font-bold mb-4 text-center">Guess their card:</label>
-                        <div className="flex flex-wrap justify-center gap-4">
+                        <div className="flex flex-wrap justify-center gap-2">
                             {GUESSABLE_CARDS.map((card) => (
                                 <div key={card.value} className="relative">
-                                    <div className="transform scale-75 origin-top">
-                                        <Card
-                                            value={card.value}
-                                            name={card.name}
-                                            description={card.desc}
-                                            active={guessValue === card.value}
-                                            onClick={() => setGuessValue(card.value)}
-                                        />
-                                    </div>
-                                    {/* Overlay for better click area or just rely on Card */}
+                                    <Card
+                                        value={card.value}
+                                        name={card.name}
+                                        description={card.desc}
+                                        active={guessValue === card.value}
+                                        onClick={() => setGuessValue(card.value)}
+                                        className="w-24 h-36 border text-xs p-1" // Override for mini card
+                                    />
                                 </div>
                             ))}
                         </div>
