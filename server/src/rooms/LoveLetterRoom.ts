@@ -317,6 +317,7 @@ export class LoveLetterRoom extends Room<LoveLetterState> {
             
             if (target) {
                 const discarded = target.hand.pop();
+                this.state.discardPile.push(discarded);
                 this.broadcast("message", `${target.name} discards ${discarded.name}.`);
                 
                 if (discarded.value === 8) {
