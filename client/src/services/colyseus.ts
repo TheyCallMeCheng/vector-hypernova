@@ -16,6 +16,7 @@ export interface JoinOptions {
     name: string;
     discordId?: string;
     avatarUrl?: string;
+    discordInstanceId?: string;
 }
 
 export const joinRoom = async (options: JoinOptions) => {

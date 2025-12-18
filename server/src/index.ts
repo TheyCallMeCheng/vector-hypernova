@@ -69,7 +69,8 @@ const gameServer = new Server({
     server: server,
 });
 
-gameServer.define("love_letter", LoveLetterRoom);
+gameServer.define("love_letter", LoveLetterRoom)
+    .filterBy(['discordInstanceId']);
 
 // app.get("(.*)", (req, res) => {
 //     res.sendFile(path.join(clientBuildPath, "index.html"));

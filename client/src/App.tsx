@@ -41,21 +41,34 @@ interface DiscordUser {
 }
 
 // Track auth promise to prevent duplicate auth flows (React Strict Mode)
-let authPromise: Promise<{ userName: string; discordId: string; avatarUrl: string }> | null = null;
+let authPromise: Promise<{ userName: string; discordId: string; avatarUrl: string; instanceId: string }> | null = null;
 
-async function getDiscordAuth(): Promise<{ userName: string; discordId: string; avatarUrl: string }> {
+async function getDiscordAuth(): Promise<{ userName: string; discordId: string; avatarUrl: string; instanceId: string }> {
     // Default fallback values
     let userName = "Player " + Math.floor(Math.random() * 1000);
     let discordId = "";
     let avatarUrl = "";
+    let instanceId = "";
+    
+    // Check if we have instance_id in URL params (even if not in full Discord env yet)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("instance_id")) {
+        instanceId = urlParams.get("instance_id") || "";
+    }
     
     if (!isDiscordEnvironment || !discordSdk) {
         console.log("Not in Discord, using fallback name:", userName);
-        return { userName, discordId, avatarUrl };
+        return { userName, discordId, avatarUrl, instanceId };
     }
     
     try {
         await discordSdk.ready();
+        
+        // If we are in Discord SDK, we can also get instanceId from there if needed, 
+        // but it's usually passed in URL query params which we already checked.
+        if (!instanceId && discordSdk.instanceId) {
+            instanceId = discordSdk.instanceId;
+        }
         
         const authResult = await discordSdk.commands.authorize({
             client_id: import.meta.env.VITE_DISCORD_CLIENT_ID,
@@ -78,7 +91,7 @@ async function getDiscordAuth(): Promise<{ userName: string; discordId: string; 
         
         if (!tokenResponse.ok) {
             console.error("Token exchange failed:", tokenResponse.status);
-            return { userName, discordId, avatarUrl };
+            return { userName, discordId, avatarUrl, instanceId };
         }
         
         const tokenData = await tokenResponse.json();
@@ -104,7 +117,7 @@ async function getDiscordAuth(): Promise<{ userName: string; discordId: string; 
         console.error("Discord auth failed:", e);
     }
     
-    return { userName, discordId, avatarUrl };
+    return { userName, discordId, avatarUrl, instanceId };
 }
 
 function App() {
@@ -135,9 +148,9 @@ function App() {
             }
             
             // Wait for auth to complete
-            const { userName, discordId, avatarUrl } = await authPromise;
+            const { userName, discordId, avatarUrl, instanceId } = await authPromise;
             
-            console.log("Auth complete. Joining room with:", userName, discordId ? "(Discord)" : "(fallback)");
+            console.log("Auth complete. Joining room with:", userName, discordId ? "(Discord)" : "(fallback)", "Instance:", instanceId);
             
             // Don't join if component unmounted or already joined
             if (!isActive || didJoin) {
@@ -152,6 +165,7 @@ function App() {
                     name: userName,
                     discordId,
                     avatarUrl,
+                    discordInstanceId: instanceId,
                 });
 
                 if (!isActive) {
