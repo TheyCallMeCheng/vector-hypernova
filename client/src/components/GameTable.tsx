@@ -29,19 +29,19 @@ export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, 
     return (
         <div className="flex-1 flex flex-col relative">
             {/* Exit Button */}
-            <button 
+            <button
                 onClick={onExit}
-                className="absolute top-4 left-4 z-10 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow font-bold text-sm"
+                className="absolute top-4 left-4 z-10 bg-black/40 hover:bg-red-900/60 text-red-100 border border-red-500/30 hover:border-red-400 backdrop-blur-sm px-6 py-2 rounded-lg shadow-lg font-bold text-sm transition-all tracking-wider uppercase"
             >
                 Exit Game
             </button>
             {/* Opponents Area */}
             <div className="absolute top-0 w-full flex justify-center space-x-8 pt-8">
                 {otherPlayers.map(p => (
-                    <div key={p.id} className={`flex flex-col items-center p-4 rounded-lg ${activePlayerId === p.id ? 'bg-yellow-900 bg-opacity-50 border-2 border-yellow-500' : ''}`}>
+                    <div key={p.id} className={`flex flex-col items-center p-4 rounded-xl backdrop-blur-md shadow-lg transition-all ${activePlayerId === p.id ? 'bg-yellow-900/50 border-2 border-yellow-500' : 'bg-black/50 border border-white/10'}`}>
                         {p.avatarUrl ? (
-                            <img 
-                                src={p.avatarUrl} 
+                            <img
+                                src={p.avatarUrl}
                                 alt={p.name}
                                 className={`w-16 h-16 rounded-full mb-2 object-cover ${p.isEliminated ? 'opacity-50 grayscale' : ''}`}
                             />
@@ -74,17 +74,17 @@ export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, 
                         <span className="text-white text-xl font-bold">{deckCount} Left</span>
                     </div>
                     <div className="relative w-32 h-48 rounded-lg shadow-xl transform transition-transform group hover:scale-105">
-                        <img 
-                            src={backCard} 
-                            alt="Deck" 
-                            className="w-full h-full object-cover rounded-lg border-2 border-white/20" 
+                        <img
+                            src={backCard}
+                            alt="Deck"
+                            className="w-full h-full object-cover rounded-lg border-2 border-white/20"
                         />
                     </div>
                 </div>
 
                 {/* Discard Group */}
                 <div className="flex flex-row items-center gap-4">
-                    <div 
+                    <div
                         className="relative w-32 h-48 cursor-pointer hover:scale-105 transition-transform"
                         onClick={onOpenDiscard}
                         title="Click to view all discarded cards"
@@ -95,7 +95,7 @@ export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, 
                                 className="absolute inset-0 shadow-md rounded-lg"
                                 style={{ transform: `rotate(${i * 5}deg) translate(${i * 2}px, ${i * 2}px)`, zIndex: i }}
                             >
-                                 <Card 
+                                <Card
                                     value={card.value}
                                     name={card.name}
                                     description={card.description}
@@ -103,7 +103,7 @@ export const GameTable: React.FC<GameTableProps> = ({ players, currentPlayerId, 
                                     hoverable={false}
                                     disabled={false} // Ensure it shows color
                                     className="w-32 h-48"
-                                 />
+                                />
                             </div>
                         ))}
                         {discardPile.length === 0 && (

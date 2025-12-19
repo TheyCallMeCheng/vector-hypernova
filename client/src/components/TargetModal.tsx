@@ -29,9 +29,11 @@ const GUESSABLE_CARDS = [
 ];
 
 export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayerId, cardName, onSelect, onCancel, needsGuess }) => {
-    // Filter: Not eliminated, Not myself
-    const validTargets = players.filter(p => !p.isEliminated && p.id !== currentPlayerId);
-    
+    // Filter: Not eliminated. Allow self only for Prince (who can target anyone including self).
+    const validTargets = players.filter(p =>
+        !p.isEliminated && (cardName === 'Prince' || p.id !== currentPlayerId)
+    );
+
     // Auto-select the first valid target
     const [selectedTarget, setSelectedTarget] = useState<string>(validTargets.length > 0 ? validTargets[0].id : '');
     const [guessValue, setGuessValue] = useState<number>(2); // Default to Priest (2)
@@ -47,19 +49,47 @@ export const TargetModal: React.FC<TargetModalProps> = ({ players, currentPlayer
             <div className={`bg-white text-black p-6 rounded-lg shadow-2xl border border-white/20 transition-all ${needsGuess ? 'max-w-4xl w-full' : 'w-96'}`}>
                 <h3 className="text-2xl font-bold mb-6 text-center">Play {cardName}</h3>
 
-                <div className="mb-6 max-w-sm mx-auto">
-                    <label className="block text-sm font-bold mb-2">Select Target:</label>
-                    <select
-                        className="w-full border p-2 rounded text-lg"
-                        value={selectedTarget}
-                        onChange={(e) => setSelectedTarget(e.target.value)}
-                    >
+                <div className="mb-6 max-w-2xl mx-auto">
+                    <label className="block text-sm font-bold mb-4 text-center">Select Target:</label>
+                    <div className="grid grid-cols-2 gap-4">
                         {validTargets.map(p => (
-                            <option key={p.id} value={p.id}>
-                                {p.name} {p.isProtected ? '(Protected)' : ''}
-                            </option>
+                            <button
+                                key={p.id}
+                                onClick={() => setSelectedTarget(p.id)}
+                                className={`flex items-center p-3 rounded-xl border-2 transition-all ${selectedTarget === p.id
+                                        ? 'border-blue-500 bg-blue-500/10 shadow-lg'
+                                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                    }`}
+                            >
+                                {p.avatarUrl ? (
+                                    <img
+                                        src={p.avatarUrl}
+                                        alt={p.name}
+                                        className="w-10 h-10 rounded-full object-cover mr-3 border border-gray-300 flex-shrink-0"
+                                    />
+                                ) : (
+                                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold mr-3 border border-gray-300 flex-shrink-0">
+                                        {p.name[0]}
+                                    </div>
+                                )}
+                                <div className="text-left">
+                                    <div className="font-bold text-sm truncate max-w-[120px]">{p.name}</div>
+                                    {p.isProtected && (
+                                        <div className="text-xs text-yellow-600 font-semibold flex items-center">
+                                            <span>🛡️ Protected</span>
+                                        </div>
+                                    )}
+                                </div>
+                                {selectedTarget === p.id && (
+                                    <div className="ml-auto text-blue-500">
+                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                )}
+                            </button>
                         ))}
-                    </select>
+                    </div>
                 </div>
 
                 {needsGuess && (
