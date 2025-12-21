@@ -22,7 +22,7 @@ interface BaronModalProps {
     onClose: () => void;
 }
 
-export const BaronModal: React.FC<BaronModalProps> = ({ data, mySessionId, onClose }) => {
+export const BaronModal: React.FC<BaronModalProps> = ({ data, onClose }) => {
     // Helper to determine status for styling
     // we need to know which card belongs to the winner.
     // However, data.winnerId might match initiator or target.

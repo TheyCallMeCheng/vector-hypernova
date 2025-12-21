@@ -1,0 +1,5 @@
+proxima.i.vecr.me {
+    handle_path /play/* {
+        reverse_proxy localhost:2567
+    }
+}

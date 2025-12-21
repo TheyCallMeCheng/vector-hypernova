@@ -7,7 +7,7 @@ const protocol = window.location.protocol.replace("http", "ws");
 const host = window.location.host;
 
 // 3. Combine them. This tells the app to connect to "Itself" (which Vite will forward)
-const endpoint = `${protocol}//${host}/colyseus`; 
+const endpoint = `${protocol}//${host}/play/colyseus`; 
 
 // -----------------------
 export const client = new Colyseus.Client(endpoint);
